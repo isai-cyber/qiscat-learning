@@ -19,6 +19,7 @@ import { renderPalette } from './palette.js';
 import { renderCircuit } from './circuit.js';
 import { toQiskit, toQasm, circuitItems } from './codegen.js';
 import { Lab } from './lab.js';
+import { OpsGuide } from './guide.js';
 
 const $ = id => document.getElementById(id);
 const SAVE_KEY = 'qiscat-learning-v1';
@@ -119,6 +120,7 @@ function renderPanel() {
   });
   $('app').classList.toggle('with-ops', quantum);
   $('ops').classList.toggle('hidden', !quantum);
+  $('btn-ops-help').classList.toggle('hidden', !quantum);
   if (quantum) {
     const disabled = { ccx: 'Necesita 3 qubits: pruébala en el 🧪 Laboratorio' };
     if (!L.twin) ['cx', 'swap', 'cz'].forEach(id => disabled[id] = 'Necesita a la gemela Qubita (2 qubits). La usarás en «Gatos entrelazados»');
@@ -178,6 +180,8 @@ function showCode(codes, svg) {
 async function startLevel(i) {
   if (!loadLevel(i)) return;
   if (!progress.seenOnboarding(i)) await intro(i);
+  // la primera vez que aparece la paleta, la guía explica cada botón
+  if (LEVELS[i].commands.some(c => QUANTUM.has(c)) && guide.firstTime) guide.open();
 }
 
 function intro(i) {
@@ -536,7 +540,9 @@ const path = new PathScreen(progress, routes, {
   onStart: startItem, onBack: goHome,
   onChallenges: () => challenges.show(), onLab: () => lab.show(),
 });
-const lab = new Lab({ save, persist, showCode, onBack: goHome });
+const guide = new OpsGuide({ save, persist, progress, onClose: updateStats });
+$('btn-ops-help').onclick = () => { sfx.tap(); guide.open(); };
+const lab = new Lab({ save, persist, showCode, onBack: goHome, onHelp: () => guide.open() });
 const challenges = new Challenges(progress, { onBack: goHome, onChange: updateStats });
 const mlPlayer = new MlPlayer({ progress, rich, onClose: () => { updateStats(); path.show({ route: 'qml' }); } });
 const dailyPick = () => progress.dailyChallenge(CHALLENGES.filter(c => challenges.unlocked(c)).map(c => c.id));

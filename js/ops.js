@@ -116,3 +116,56 @@ export function blockHead(ln, lang) {
   }[ln.t];
   return { if: 'si gatoDespierto() {', while: 'mientras gatoDespierto() {', box: 'caja {' }[ln.t];
 }
+
+// ---------- Guía "Conoce tus botones" ----------
+// cat: grupo de colores · kid: explicación para niñas y niños · demo: estado inicial del ejemplo
+// unlock: nivel donde se puede usar (lab = solo en el Laboratorio)
+export const OP_CATS = [
+  { id: 'sup', name: 'Superposición', color: 'red', desc: 'Convierte al gato en fantasma: dormido y despierto a la vez.' },
+  { id: 'flip', name: 'Voltear y conectar', color: 'blue', desc: 'Cambian 😴 por 😺 o conectan a dos gatos.' },
+  { id: 'phase', name: 'Fase', color: 'light', desc: 'Giran la “fase” (el color invisible) del gato. Solo se nota si después usas H.' },
+  { id: 'rot', name: 'Rotaciones', color: 'pink', desc: 'Giran al gato poco a poco: puede quedar 85% 😴 y 15% 😺.' },
+  { id: 'ctrl', name: 'Medir y control', color: 'gray', desc: 'Abren la caja, reinician al gato o controlan el orden del programa.' },
+];
+export const OP_GUIDE = {
+  h: { cat: 'sup', kid: 'Pone al gato en superposición: 50% 😴 y 50% 😺. Si la usas dos veces, ¡el gato regresa!', demo: '0', unlock: 'x' },
+  x: { cat: 'flip', kid: 'Voltea al gato como una moneda: si duerme lo despierta, si está despierto lo duerme.', demo: '0', unlock: 'x' },
+  cx: { cat: 'flip', kid: 'CNOT: el punto ● es el control y el ⊕ el objetivo. Si Schrödi está 😺, voltea a Qubita. Con H antes, ¡los entrelaza!', demo: '10', unlock: 'entrelazados' },
+  ccx: { cat: 'flip', kid: 'Toffoli: dos controles ●●. Solo si los dos gatos están 😺, voltea al tercero. Necesita 3 qubits.', demo: '110', unlock: 'lab' },
+  swap: { cat: 'flip', kid: 'Intercambia a los dos gatos: lo que tenía Schrödi lo tiene Qubita y al revés.', demo: '10', unlock: 'entrelazados' },
+  i: { cat: 'flip', kid: 'Identidad: no hace nada. Es como decir “espera un turno”.', demo: '0', unlock: 'x' },
+  t: { cat: 'phase', kid: 'Gira la fase de 😺 un poquito (45°). Dos T = una S.', demo: '+', unlock: 'x' },
+  s: { cat: 'phase', kid: 'Gira la fase de 😺 90°. Dos S = una Z.', demo: '+', unlock: 'x' },
+  z: { cat: 'phase', kid: 'Le pone un signo menos a 😺. Parece que no hace nada… ¡pero H Z H es igual a X!', demo: '+', unlock: 'x' },
+  tdg: { cat: 'phase', kid: 'T al revés: gira la fase −45°. T y T† juntas se cancelan.', demo: '+', unlock: 'x' },
+  sdg: { cat: 'phase', kid: 'S al revés: gira la fase −90°. S y S† juntas se cancelan.', demo: '+', unlock: 'x' },
+  p: { cat: 'phase', kid: 'Fase con el ángulo que tú elijas (toca el ángulo en el código para cambiarlo).', demo: '+', unlock: 'x' },
+  rz: { cat: 'phase', kid: 'Gira al gato alrededor del eje Z de la esfera de Bloch, el ángulo que tú elijas.', demo: '+', unlock: 'x' },
+  measure: { cat: 'ctrl', kid: 'Abre la caja y mira al gato: deja de ser fantasma y elige 😴 o 😺 al azar.', demo: '+', unlock: 'x' },
+  reset: { cat: 'ctrl', kid: 'Reinicia al gato: pase lo que pase, vuelve a 😴 (|0⟩).', demo: '1', unlock: 'x' },
+  barrier: { cat: 'ctrl', kid: 'Barrera: una línea para separar partes del circuito. No cambia al gato.', demo: '0', unlock: 'x' },
+  cz: { cat: 'ctrl', kid: 'Control-Z: si los dos gatos están 😺, cambia el signo. Es una conexión “invisible”.', demo: '++', unlock: 'entrelazados' },
+  if: { cat: 'ctrl', kid: 'Si la última medición dio 😺, hace lo que está adentro. Si dio 😴, se lo salta.', unlock: 'x' },
+  for: { cat: 'ctrl', kid: 'Repite los comandos de adentro las veces que elijas.', unlock: 'bucle' },
+  while: { cat: 'ctrl', kid: 'Repite lo de adentro mientras la última medición dé 😺. ¡Mide adentro para que termine!', unlock: 'x' },
+  box: { cat: 'ctrl', kid: 'Una caja para agrupar compuertas y ordenar tu circuito.', unlock: 'x' },
+  sx: { cat: 'rot', kid: 'Media X: dos √X seguidas son una X completa.', demo: '0', unlock: 'x' },
+  y: { cat: 'rot', kid: 'Voltea al gato como X, pero además le cambia la fase.', demo: '0', unlock: 'x' },
+  rx: { cat: 'rot', kid: 'Gira al gato alrededor del eje X. Con π/2 queda mitad y mitad; con π, se voltea.', demo: '0', unlock: 'x' },
+  ry: { cat: 'rot', kid: 'Gira al gato alrededor del eje Y. ¡Con ella fabricas monedas trucadas!', demo: '0', unlock: 'x' },
+};
+// Preguntas del quiz "¿Cuál es cuál?"
+export const OP_QUIZ = [
+  { q: '¿Qué botón pone al gato en superposición?', a: 'h' },
+  { q: '¿Qué botón voltea al gato de 😴 a 😺?', a: 'x' },
+  { q: '¿Qué botón abre la caja para medir al gato?', a: 'measure' },
+  { q: '¿Qué botón entrelaza a dos gatos (si antes usas H)?', a: 'cx' },
+  { q: '¿Qué botón intercambia a los dos gatos?', a: 'swap' },
+  { q: '¿Qué botón repite comandos varias veces?', a: 'for' },
+  { q: '¿Qué botón le pone un signo menos a 😺?', a: 'z' },
+  { q: '¿Qué botón regresa al gato a 😴 pase lo que pase?', a: 'reset' },
+  { q: '¿Qué botón no hace nada (espera un turno)?', a: 'i' },
+  { q: '¿Qué botón hace algo solo si la medición dio 😺?', a: 'if' },
+  { q: '¿Qué botón necesita 3 gatos?', a: 'ccx' },
+  { q: '¿Con qué botón fabricas una moneda trucada?', a: 'ry' },
+];

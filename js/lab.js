@@ -69,8 +69,8 @@ function qubitInfo(sim, k) {
 const phaseColor = ([re, im]) => `hsl(${((Math.atan2(im, re) * 180 / Math.PI) + 360) % 360}, 75%, 55%)`;
 
 export class Lab {
-  constructor({ save, persist, onBack, showCode }) {
-    this.save = save; this.persist = persist; this.onBack = onBack; this.showCode = showCode;
+  constructor({ save, persist, onBack, showCode, onHelp }) {
+    this.save = save; this.persist = persist; this.onBack = onBack; this.showCode = showCode; this.onHelp = onHelp;
     this.root = $('lab');
     save.lab ||= { n: 2, lines: [G('h', 0), G('cx', 0, { q2: 1 }), M] };
     this.active = 0;
@@ -134,7 +134,7 @@ export class Lab {
     if (n < 2) ['cx', 'swap', 'cz'].forEach(id => disabled[id] = 'Necesita 2 qubits');
     if (n < 3) disabled.ccx = 'Necesita 3 qubits';
     renderPalette($('lab-ops'), {
-      disabled,
+      disabled, onHelp: this.onHelp,
       onPick: (id, why) => {
         if (why) { $('lab-tip').textContent = `🔒 ${OP[id].name}: ${why}. Cambia el número de qubits arriba.`; return; }
         sfx.tap();

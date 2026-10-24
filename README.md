@@ -69,6 +69,14 @@ El juego no necesita instalar Qiskit: usa su propio simulador de 2 qubits en el 
 
 ![Qiskit y OpenQASM](docs/screenshots/27-qiskit-openqasm.png)
 
+### 📖 Guía «Conoce tus botones»
+
+Antes de usar la paleta, la guía explica cada botón con palabras para niños, un **ejemplo en vivo** (cómo cambia el gato) y el código que escribe; después, un quiz **«¿Cuál es cuál?»**. Aparece sola en el primer nivel cuántico, se abre con el botón **? Guía** y, en el juego, mantener presionado un botón muestra su explicación.
+
+| | |
+|---|---|
+| ![Guía](docs/screenshots/33-guia-botones.png) | ![Quiz](docs/screenshots/34-guia-quiz.png) |
+
 ## 🏅 35 desafíos extra
 
 | | |
@@ -169,6 +177,7 @@ js/palette.js             Paleta Operations
 js/circuit.js             Dibujo del circuito (SVG)
 js/codegen.js             Exportar a Qiskit y OpenQASM 3
 js/lab.js                 🧪 Laboratorio (modo libre)
+js/guide.js               Guía «Conoce tus botones» y quiz «¿Cuál es cuál?»
 js/routes.js              Rutas de aprendizaje (inicio), meta diaria, reto del día, insignias
 js/ml.js                  Lecciones de datos y Machine Learning cuántico
 landing/                  Landing page (usa el motor 3D del juego)
