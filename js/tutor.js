@@ -1,4 +1,4 @@
-// Profe Qubit 🦉 — chat con el tutor (DeepSeek a través de /api/tutor)
+// Profe Qubit 🦉 — chat con el tutor (a través de /api/tutor)
 
 const $ = id => document.getElementById(id);
 const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
@@ -30,7 +30,7 @@ export class Tutor {
   }
 
   status() {
-    $('tutor-status').textContent = this.ready ? 'Tutor cuántico · en línea ✨' : this.ready === false ? 'Durmiendo 😴 (falta configurar DeepSeek)' : 'Conectando…';
+    $('tutor-status').textContent = this.ready ? 'Tutor cuántico · en línea ✨' : this.ready === false ? 'Durmiendo 😴 (falta configurar la IA)' : 'Conectando…';
   }
 
   open(question) {
@@ -102,7 +102,7 @@ export class Tutor {
       this.history.pop();
       const m = String(e.message);
       bubble.innerHTML = m === 'no_key'
-        ? '😴 El Profe Qubit está dormido: la persona adulta que instaló el juego debe poner la clave <code>DEEPSEEK_API_KEY</code> en el servidor. Mientras tanto, prueba el botón <b>Pista</b> o toca las palabras azules.'
+        ? '😴 El Profe Qubit está dormido: la persona adulta que instaló el juego debe poner la clave <code>AI_API_KEY</code> en el servidor. Mientras tanto, prueba el botón <b>Pista</b> o toca las palabras azules.'
         : m === 'rate'
           ? '🦉 ¡Uf, muchas preguntas seguidas! Espera un minutito y vuelve a preguntar.'
           : '🦉 No pude conectarme. Revisa que el juego esté abierto con <code>node server.js</code> y que haya internet.';

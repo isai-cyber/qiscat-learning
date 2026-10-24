@@ -1,8 +1,8 @@
 // Servidor del QisCat Learning (sin dependencias, Node 18+)
 // - Sirve los archivos del juego
-// - POST /api/tutor → "Profe Qubit", tutor con DeepSeek (la API key nunca llega al navegador)
+// - POST /api/tutor → "Profe Qubit", tutor con IA (la API key nunca llega al navegador)
 //
-// Uso:  DEEPSEEK_API_KEY=sk-... node server.js     (o pon la clave en un archivo .env)
+// Uso:  AI_API_KEY=sk-... node server.js     (o pon la clave en un archivo .env)
 
 import http from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
@@ -22,9 +22,10 @@ if (existsSync(envFile)) {
 }
 
 const PORT = +process.env.PORT || 8080;
-const API_KEY = process.env.DEEPSEEK_API_KEY;
-const MODEL = process.env.DEEPSEEK_MODEL || 'deepseek-chat';
-const BASE = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com';
+// Cualquier API compatible con /chat/completions
+const API_KEY = process.env.AI_API_KEY;
+const MODEL = process.env.AI_MODEL || 'deepseek-chat';
+const BASE = process.env.AI_BASE_URL || 'https://api.deepseek.com';
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
@@ -121,7 +122,7 @@ async function tutor(req, res) {
     return res.end(JSON.stringify({ error: 'upstream' }));
   }
   if (!upstream.ok) {
-    console.error('DeepSeek error', upstream.status, await upstream.text().catch(() => ''));
+    console.error('Error de la IA', upstream.status, await upstream.text().catch(() => ''));
     res.writeHead(502, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({ error: 'upstream', status: upstream.status }));
   }
@@ -170,5 +171,5 @@ http.createServer((req, res) => {
   serveStatic(req, res);
 }).listen(PORT, () => {
   console.log(`🐱 QisCat Learning en http://localhost:${PORT}`);
-  console.log(API_KEY ? `🦉 Profe Qubit listo (DeepSeek: ${MODEL})` : '⚠️  Falta DEEPSEEK_API_KEY: el tutor estará dormido.');
+  console.log(API_KEY ? `🦉 Profe Qubit listo (${MODEL})` : '⚠️  Falta AI_API_KEY: el tutor estará dormido.');
 });
