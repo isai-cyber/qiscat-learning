@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>QisCat Learning · Aprende computación cuántica</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" href="assets/logo.webp" type="image/webp" />
+  <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="tb-left">
+        <button class="icon-btn" id="btn-levels" title="Ver todas las páginas">
+          <svg width="22" height="18" viewBox="0 0 22 18"><rect x="1" y="1" width="20" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><line x1="8" y1="1" x2="8" y2="17" stroke="currentColor" stroke-width="2"/></svg>
+        </button>
+        <img class="top-logo" src="assets/logo.webp" alt="" />
+        <button class="chapter-btn" id="btn-chapter">QisCat Learning <span class="chev">⌄</span></button>
+      </div>
+      <div class="tb-center">
+        <button class="nav-arrow" id="btn-prev" title="Página anterior">‹</button>
+        <span id="page-title">…</span>
+        <button class="nav-arrow" id="btn-next" title="Página siguiente">›</button>
+      </div>
+      <div class="tb-right">
+        <button class="icon-btn" id="btn-clear" title="Borrar todo el código">↺</button>
+        <button class="icon-btn" id="btn-more" title="Más">⋯</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="left-pane">
+        <article id="instructions" class="instructions"></article>
+        <div class="divider"></div>
+        <div id="code" class="code" aria-label="Tu código"></div>
+      </section>
+
+      <section class="stage" id="stage">
+        <div id="canvas-host"></div>
+
+        <div class="fish-sign" title="Peces recogidos"><span class="fish-ico">🐟</span><span id="fish-count">0/1</span></div>
+
+        <div class="qmeter" id="qmeter">
+          <div class="qrow">
+            <span class="qname">Schrödi</span>
+            <span class="qend">😴</span>
+            <div class="qbar"><div class="qfill" id="qfill-a"></div></div>
+            <span class="qend">😺</span>
+            <span class="qpct" id="qpct-a">100% 😴</span>
+          </div>
+          <div class="qrow hidden" id="qrow-b">
+            <span class="qname">Qubita</span>
+            <span class="qend">😴</span>
+            <div class="qbar"><div class="qfill twin" id="qfill-b"></div></div>
+            <span class="qend">😺</span>
+            <span class="qpct" id="qpct-b">100% 😴</span>
+          </div>
+          <div class="ket">|ψ⟩ = <span id="ket">|😴⟩</span> <span class="ent hidden" id="ent-badge">🔗 entrelazados</span></div>
+          <div class="history hidden" id="history"></div>
+        </div>
+
+        <button class="round-btn" id="btn-sound" title="Sonido">🔊</button>
+        <button class="tutor-btn" id="btn-tutor" title="Pregúntale al Profe Qubit">🦉 <span>Profe Qubit</span></button>
+
+        <button class="round-btn speed" id="btn-speed" title="Velocidad">
+          <svg width="26" height="26" viewBox="0 0 26 26"><circle cx="13" cy="13" r="11" fill="none" stroke="currentColor" stroke-width="2"/><line x1="13" y1="13" x2="13" y2="6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+        </button>
+        <div class="speed-menu hidden" id="speed-menu">
+          <button data-speed="4">⏩⏩ Ejecutar lo más rápido</button>
+          <button data-speed="2">⏩ Ejecutar más rápido</button>
+          <button data-speed="1" class="sel">▶ Ejecutar mi código</button>
+          <button data-speed="0.5">🐢 Ejecutar despacio</button>
+        </div>
+
+        <button class="run-btn" id="btn-run"><span class="play">▶</span> <span id="run-label">Ejecutar mi código</span></button>
+        <button class="hint-btn" id="btn-hint">Pista</button>
+
+        <div class="toast hidden" id="toast">
+          <div class="toast-msg" id="toast-msg"></div>
+          <div class="toast-actions">
+            <button id="toast-ask">🦉 Pregúntale al Profe</button>
+            <button id="toast-ok" class="primary">Intentar de nuevo</button>
+          </div>
+        </div>
+
+        <aside class="tutor hidden" id="tutor">
+          <header>
+            <div class="owl">🦉</div>
+            <div><b>Profe Qubit</b><small id="tutor-status">Tutor cuántico · DeepSeek</small></div>
+            <button class="icon-btn" id="tutor-close" title="Cerrar">✕</button>
+          </header>
+          <div class="msgs" id="tutor-msgs"></div>
+          <div class="suggest" id="tutor-suggest"></div>
+          <form id="tutor-form">
+            <input id="tutor-input" maxlength="600" autocomplete="off" placeholder="Escribe tu pregunta…" />
+            <button type="submit" title="Enviar">➤</button>
+          </form>
+        </aside>
+      </section>
+    </main>
+
+    <footer class="toolbar">
+      <div class="tb-group">
+        <button class="tool" id="btn-undo" title="Deshacer">↶</button>
+        <button class="tool" id="btn-redo" title="Rehacer">↷</button>
+      </div>
+      <div class="chips" id="chips"></div>
+      <div class="tb-group">
+        <button class="tool" id="btn-back" title="Borrar línea">⌫</button>
+        <button class="tool" id="btn-enter" title="Salir del bloque { }">↵</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Lista de páginas -->
+  <div class="drawer hidden" id="drawer">
+    <div class="drawer-panel">
+      <img class="drawer-logo" src="assets/logo.webp" alt="" />
+      <h2>QisCat Learning</h2>
+      <p class="sub">Aprende computación cuántica</p>
+      <ol id="level-list"></ol>
+    </div>
+  </div>
+
+  <!-- Glosario -->
+  <div class="gloss-pop hidden" id="gloss-pop"></div>
+
+  <!-- Modales -->
+  <div class="modal hidden" id="modal">
+    <div class="modal-card" id="modal-card"></div>
+  </div>
+
+  <div class="loading" id="loading"><img class="spinner" src="assets/logo.webp" alt="QisCat Learning" /><p>Abriendo la caja…</p></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
