@@ -22,6 +22,7 @@ if (existsSync(envFile)) {
 }
 
 const PORT = +process.env.PORT || 8080;
+const HOST = process.env.HOST; // p. ej. 127.0.0.1 detrás de nginx
 // Cualquier API compatible con /chat/completions
 const API_KEY = process.env.AI_API_KEY;
 const MODEL = process.env.AI_MODEL || 'deepseek-chat';
@@ -90,8 +91,16 @@ ${s(ctx.code) || '(vacío)'}
 - Solución de referencia (NO la muestres salvo que la pidan con insistencia): ${s(ctx.solution)}`;
 }
 
+// Detrás de un proxy local (nginx) la IP real viene en X-Forwarded-For
+function clientIp(req) {
+  const remote = req.socket.remoteAddress || '?';
+  const fwd = req.headers['x-forwarded-for'];
+  const local = remote === '127.0.0.1' || remote === '::1' || remote === '::ffff:127.0.0.1';
+  return local && fwd ? String(fwd).split(',')[0].trim() : remote;
+}
+
 async function tutor(req, res) {
-  const ip = req.socket.remoteAddress || '?';
+  const ip = clientIp(req);
   if (!API_KEY) { res.writeHead(503, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ error: 'no_key' })); }
   if (limited(ip)) { res.writeHead(429, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ error: 'rate' })); }
 
@@ -169,7 +178,7 @@ http.createServer((req, res) => {
     if (req.method === 'POST') return tutor(req, res).catch(e => { console.error(e); try { res.end(); } catch {} });
   }
   serveStatic(req, res);
-}).listen(PORT, () => {
-  console.log(`🐱 QisCat Learning en http://localhost:${PORT}`);
+}).listen(PORT, ...(HOST ? [HOST] : []), () => {
+  console.log(`🐱 QisCat Learning en http://${HOST || 'localhost'}:${PORT}`);
   console.log(API_KEY ? `🦉 Profe Qubit listo (${MODEL})` : '⚠️  Falta AI_API_KEY: el tutor estará dormido.');
 });

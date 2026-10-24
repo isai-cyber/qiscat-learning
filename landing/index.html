@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QisCat Learning · Aprende computación cuántica jugando</title>
+  <meta name="description" content="Juego 3D gratis para niñas y niños: programa al gato de Schrödinger y descubre qubits, superposición y entrelazamiento." />
+  <link rel="icon" href="../assets/logo.webp" type="image/webp" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="landing.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <!-- Pantalla de carga -->
+  <div class="loader" id="loader">
+    <div class="fireflies" aria-hidden="true"></div>
+    <svg class="loader-cat" viewBox="0 0 120 130" aria-hidden="true">
+      <path d="M22 48 L18 8 L44 30 Q60 26 76 30 L102 8 L98 48 Q110 70 106 96 Q100 124 60 124 Q20 124 14 96 Q10 70 22 48Z" fill="#0b120f" stroke="#1d2b25" stroke-width="2"/>
+      <ellipse class="eye" cx="44" cy="66" rx="5" ry="9" fill="#ffb238"/>
+      <ellipse class="eye" cx="76" cy="66" rx="5" ry="9" fill="#ffb238"/>
+    </svg>
+    <div class="loader-glow"></div>
+    <p>Espera mientras Schrödi decide si está dormido o despierto…</p>
+    <div class="loader-spin"><span></span><i></i><span></span></div>
+  </div>
+
+  <header class="nav" id="nav">
+    <a class="nav-logo" href="#top"><img src="../assets/logo.webp" alt="QisCat Learning" /></a>
+    <nav>
+      <a href="#juego">El juego</a>
+      <a href="#caja">La caja</a>
+      <a href="#poderes">Poderes</a>
+      <a href="#conceptos">Conceptos</a>
+      <a href="#profe">Profe Qubit</a>
+    </nav>
+    <div class="nav-right">
+      <a class="gh-btn" href="https://github.com/isai-cyber/qiscat-learning" target="_blank" rel="noopener" title="Ver el código en GitHub" aria-label="GitHub"><svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg></a>
+      <a class="pill" href="/jugar/">Jugar ahora</a>
+    </div>
+  </header>
+
+  <a class="side-tab" href="/jugar/" title="Jugar">
+    <span class="side-arrow">◀</span>
+    <span class="side-body"><small>¡9 niveles cuánticos!</small><b>● Jugar gratis</b></span>
+  </a>
+
+  <main id="top">
+    <!-- Portada -->
+    <section class="hero torn-bottom">
+      <div id="hero3d"></div>
+      <div class="hero-title">
+        <h1><span>QisCat</span><span class="l2">Learning</span></h1>
+        <p>Programa al gato de Schrödinger y descubre los secretos de las computadoras cuánticas</p>
+        <div class="hero-links"><a class="pill solid" href="/jugar/">▶ Jugar ahora</a><a class="pill dark" href="https://github.com/isai-cyber/qiscat-learning" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg> Ver en GitHub</a></div>
+      </div>
+      <div class="hero-state" id="hero-state">😴 dormido</div>
+      <div class="scroll-hint">desliza ↓</div>
+    </section>
+
+    <!-- El juego -->
+    <section class="split" id="juego">
+      <h2 class="reveal">Cómo se<br>juega</h2>
+      <p class="lead reveal">Escribe código tocando comandos, como en Swift Playgrounds, y mira a Schrödi moverse por islas flotantes en 3D.</p>
+    </section>
+
+    <section class="features">
+      <article class="feature reveal">
+        <figure class="torn-frame"><img src="../docs/screenshots/02-nivel-1-comandos.png" alt="Escribiendo comandos" loading="lazy" /></figure>
+        <h3>Programa</h3>
+        <p>Usa <code>avanzar()</code>, <code>girarDerecha()</code> y bucles <code>for</code> para llevar al gato hasta los peces.</p>
+      </article>
+      <article class="feature reveal">
+        <figure class="torn-frame"><img src="../docs/screenshots/04-superposicion.png" alt="Gato en superposición" loading="lazy" /></figure>
+        <h3>Superpón</h3>
+        <p>La compuerta <code>aplicarH()</code> convierte a Schrödi en dos gatos fantasma: dormido y despierto a la vez.</p>
+      </article>
+      <article class="feature reveal">
+        <figure class="torn-frame"><img src="../docs/screenshots/05-muro-cuantico.png" alt="Muro cuántico" loading="lazy" /></figure>
+        <h3>Atraviesa</h3>
+        <p>Los muros cuánticos solo dejan pasar gatos en superposición. ¡Como el efecto túnel de verdad!</p>
+      </article>
+      <article class="feature reveal">
+        <figure class="torn-frame"><img src="../docs/screenshots/06-entrelazamiento.png" alt="Gatos entrelazados" loading="lazy" /></figure>
+        <h3>Entrelaza</h3>
+        <p>Conecta a Schrödi con su gemela Qubita: al medirlos, siempre salen iguales.</p>
+      </article>
+    </section>
+
+    <!-- La caja -->
+    <section class="box-sec torn" id="caja">
+      <div class="leaves" aria-hidden="true"></div>
+      <h2 class="reveal">¿Dormido o despierto?</h2>
+      <p class="reveal">El gato está en superposición dentro de la caja. Nadie sabe cómo está… hasta que la abres.</p>
+      <div class="box-stage">
+        <img id="box-img" alt="La caja de Schrödinger" />
+        <div class="box-flash" id="box-flash"></div>
+      </div>
+      <button class="pill big" id="box-btn">Abrir la caja</button>
+      <div class="tally" id="tally">😴 0 · 😺 0</div>
+      <p class="small">Ábrela muchas veces: saldrá la mitad de cada uno. ¡Así funciona la medición cuántica!</p>
+    </section>
+
+    <!-- Poderes / carrusel -->
+    <section class="powers torn" id="poderes">
+      <h2 class="reveal">Superpoderes cuánticos</h2>
+      <div class="carousel" id="carousel"></div>
+      <p class="powers-desc" id="power-desc"></p>
+      <div class="arrows">
+        <button class="arrow" id="pw-prev" aria-label="Anterior">←</button>
+        <button class="arrow" id="pw-next" aria-label="Siguiente">→</button>
+      </div>
+    </section>
+
+    <!-- Conceptos -->
+    <section class="split" id="conceptos">
+      <h2 class="reveal">Qué vas a<br>aprender</h2>
+      <p class="lead reveal">Ideas de verdad de la física cuántica <span class="mute">/kuán·ti·ka/</span>, explicadas con un gato, una caja y muchos peces. Cada concepto es una página del juego.</p>
+    </section>
+    <section class="cards-wrap">
+      <div class="cards" id="cards"></div>
+      <div class="cards-foot">
+        <span class="mute">Descubre los 9 niveles</span>
+        <div class="arrows">
+          <button class="arrow" id="cards-prev" aria-label="Anterior">←</button>
+          <button class="arrow" id="cards-next" aria-label="Siguiente">→</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Profe Qubit -->
+    <section class="split profe torn-top" id="profe">
+      <figure class="profe-art torn-frame reveal"><img src="../docs/screenshots/09-profe-qubit.png" alt="Profe Qubit" loading="lazy" /></figure>
+      <div class="profe-text">
+        <h2 class="reveal"><span class="coin">🦉</span> Profe Qubit</h2>
+        <p class="reveal">Un búho tutor con inteligencia artificial que sabe muchísimo de qubits. Ve tu código y el estado del gato, y te da pistas sin regalarte la respuesta.</p>
+        <p class="reveal">Explica con monedas, olas y gemelos, en palabras sencillas y siempre en español.</p>
+        <a class="pill reveal" href="/jugar/">Conocer al Profe</a>
+      </div>
+    </section>
+
+    <!-- Para familias -->
+    <section class="facts">
+      <div class="fact reveal"><b>9</b><span>niveles</span></div>
+      <div class="fact reveal"><b>8–12</b><span>años</span></div>
+      <div class="fact reveal"><b>0</b><span>cuentas ni anuncios</span></div>
+      <a class="fact reveal" href="https://github.com/isai-cyber/qiscat-learning" target="_blank" rel="noopener"><b>100%</b><span>gratis y de código abierto ↗</span></a>
+    </section>
+
+    <!-- Comunidad -->
+    <section class="sky torn-top" id="jugar">
+      <div class="sky-inner">
+        <h2 class="reveal">Abre la caja y juega</h2>
+        <p class="reveal">Gratis, en el navegador, en computadora, tablet o celular.</p>
+        <div class="sky-btns reveal">
+          <a class="pill solid" href="/jugar/">▶ Jugar ahora</a>
+          <a class="pill light" href="https://github.com/isai-cyber/qiscat-learning" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg> GitHub</a>
+        </div>
+      </div>
+      <svg class="hills" viewBox="0 0 1440 320" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 210 L120 150 L220 190 L360 90 L470 170 L560 130 L700 200 L860 110 L980 180 L1100 120 L1240 190 L1340 140 L1440 170 L1440 320 L0 320Z" fill="#2a4a5a" opacity=".55"/>
+        <path d="M0 250 Q180 190 360 235 T720 230 T1080 220 T1440 240 L1440 320 L0 320Z" fill="#183326"/>
+        <g fill="#0e1714">
+          <path d="M300 236 l-6 -22 l12 10 q8 -3 16 0 l12 -10 l-6 22 q4 18 -16 20 q-20 -2 -12 -20Z"/>
+          <path d="M1060 226 l-5 -18 l10 8 q7 -2 13 0 l10 -8 l-5 18 q3 15 -13 16 q-16 -1 -10 -16Z"/>
+        </g>
+        <path d="M0 285 Q240 250 480 280 T960 275 T1440 270 L1440 320 L0 320Z" fill="#0e1714"/>
+      </svg>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="foot-grid">
+      <img class="foot-logo" src="../assets/logo.webp" alt="QisCat Learning" />
+      <ul>
+        <li class="dot">El juego</li>
+        <li><a href="#juego">Cómo se juega</a></li>
+        <li><a href="#caja">La caja</a></li>
+        <li><a href="#poderes">Poderes</a></li>
+        <li><a href="#conceptos">Conceptos</a></li>
+      </ul>
+      <ul>
+        <li class="dot">Proyecto</li>
+        <li><a href="https://github.com/isai-cyber/qiscat-learning" target="_blank" rel="noopener">Código fuente</a></li>
+        <li><a href="/jugar/">Jugar</a></li>
+        <li><a href="https://github.com/CraigMLdsouza/CatCode" target="_blank" rel="noopener">Basado en CatCode</a></li>
+      </ul>
+      <a class="pill" href="/jugar/">Jugar ahora</a>
+    </div>
+    <div class="foot-bottom"><span>© 2026 QisCat Learning</span><span>Licencia MIT</span></div>
+  </footer>
+
+  <script type="module" src="landing.js"></script>
+</body>
+</html>

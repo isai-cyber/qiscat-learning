@@ -6,6 +6,20 @@ Juego web 3D para niñas y niños (8–12 años) donde aprenden **computación c
 
 ![Superposición en la caja de Schrödinger](docs/screenshots/04-superposicion.png)
 
+Juega en línea: **https://qiscat.isaihub.pro** (landing) · **https://qiscat.isaihub.pro/jugar/** (juego)
+
+## Ruta de aprendizaje y gamificación
+
+| | |
+|---|---|
+| ![Ruta](docs/screenshots/13-ruta.png) **Ruta tipo Duolingo con niveles bloqueados** | ![Quiz](docs/screenshots/14-onboarding-quiz.png) **Introducción con mini quiz en cada nivel** |
+| ![Victoria](docs/screenshots/15-victoria-estrellas.png) **Estrellas, XP y racha** | ![Desbloqueo](docs/screenshots/16-nivel-desbloqueado.png) **El siguiente nivel se desbloquea al ganar** |
+
+- **Ruta**: 3 unidades con los niveles en zigzag; cada nivel se desbloquea al terminar el anterior. Al final, el trofeo 🏆 *Ingeniero cuántico*.
+- **Introducción por nivel**: el Profe Qubit explica el concepto, presenta los comandos nuevos y hace una pregunta (+5 XP).
+- **Estrellas**: 3 ⭐ a la primera y sin pista · 2 ⭐ con hasta 2 errores · 1 ⭐ al terminar.
+- **XP y racha 🔥** de días seguidos. Todo se guarda en el navegador.
+
 ## Capturas
 
 | | |
@@ -67,7 +81,20 @@ js/editor.js              Editor de código por toques (for, deshacer, ⌫, ↵)
 js/quantum.js             Simulador de 2 qubits (X, H, CNOT, medir)
 js/levels.js              Niveles, textos y glosario
 js/tutor.js               Chat del Profe Qubit
+js/progress.js            XP, estrellas, racha y desbloqueo de niveles
+js/path.js                Ruta de aprendizaje (pantalla de inicio)
+js/onboarding.js          Introducción de cada nivel con mini quiz
+js/onboarding-data.js     Textos, unidades y preguntas de cada nivel
+landing/                  Landing page (usa el motor 3D del juego)
 ```
+
+### Landing page
+
+`landing/index.html` es la página de presentación. En producción vive en la raíz del dominio y el juego en `/jugar/`, por eso sus botones apuntan a `/jugar/`. En local ábrela en `http://localhost:8080/landing/index.html`.
+
+### Producción
+
+`server.js` acepta `HOST=127.0.0.1` para quedar detrás de nginx, y toma la IP real de `X-Forwarded-For` para limitar las preguntas al tutor por usuario.
 
 Para crear un nivel nuevo, agrega un objeto en `LEVELS` (`js/levels.js`); el mapa usa caracteres (`S`, `.`, `F`, `B`, `Q`, `A`, `D`, `w`, `T`, `#`).
 

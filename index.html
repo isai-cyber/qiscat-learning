@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="icon" href="assets/logo.webp" type="image/webp" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=2" />
   <script type="importmap">
     {
       "imports": {
@@ -21,7 +21,7 @@
   <div id="app">
     <header class="topbar">
       <div class="tb-left">
-        <button class="icon-btn" id="btn-levels" title="Ver todas las páginas">
+        <button class="icon-btn" id="btn-levels" title="Ruta de aprendizaje">
           <svg width="22" height="18" viewBox="0 0 22 18"><rect x="1" y="1" width="20" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><line x1="8" y1="1" x2="8" y2="17" stroke="currentColor" stroke-width="2"/></svg>
         </button>
         <img class="top-logo" src="assets/logo.webp" alt="" />
@@ -33,6 +33,8 @@
         <button class="nav-arrow" id="btn-next" title="Página siguiente">›</button>
       </div>
       <div class="tb-right">
+        <span class="stat-chip fire" title="Racha de días seguidos">🔥 <b id="stat-streak">0</b></span>
+        <span class="stat-chip xp" title="Puntos de experiencia">⚡ <b id="stat-xp">0</b></span>
         <button class="icon-btn" id="btn-clear" title="Borrar todo el código">↺</button>
         <button class="icon-btn" id="btn-more" title="Más">⋯</button>
       </div>
@@ -122,15 +124,11 @@
     </footer>
   </div>
 
-  <!-- Lista de páginas -->
-  <div class="drawer hidden" id="drawer">
-    <div class="drawer-panel">
-      <img class="drawer-logo" src="assets/logo.webp" alt="" />
-      <h2>QisCat Learning</h2>
-      <p class="sub">Aprende computación cuántica</p>
-      <ol id="level-list"></ol>
-    </div>
-  </div>
+  <!-- Ruta de aprendizaje (pantalla de inicio) -->
+  <div class="path hidden" id="path"></div>
+
+  <!-- Introducción de cada nivel -->
+  <div class="onb hidden" id="onb"></div>
 
   <!-- Glosario -->
   <div class="gloss-pop hidden" id="gloss-pop"></div>
@@ -142,6 +140,6 @@
 
   <div class="loading" id="loading"><img class="spinner" src="assets/logo.webp" alt="QisCat Learning" /><p>Abriendo la caja…</p></div>
 
-  <script type="module" src="js/main.js"></script>
+  <script type="module" src="js/main.js?v=2"></script>
 </body>
 </html>
