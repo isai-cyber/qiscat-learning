@@ -9,11 +9,12 @@ const DECOR = { 1: '<img src="assets/logo.webp" alt="">', 2: '<span>📦</span>'
 
 export class PathScreen {
   // onStart(i) se llama al tocar EMPEZAR / REPASAR en un nivel desbloqueado
-  constructor(progress, { onStart, onClose, onChallenges }) {
+  constructor(progress, { onStart, onClose, onChallenges, onLab }) {
     this.p = progress;
     this.onStart = onStart;
     this.onClose = onClose;
     this.onChallenges = onChallenges;
+    this.onLab = onLab;
     this.root = $('path');
     this.root.addEventListener('click', e => this.onClick(e));
   }
@@ -41,6 +42,7 @@ export class PathScreen {
           <span class="st star" title="Estrellas">⭐ ${p.totalStars()}/${LEVELS.length * 3}</span>
         </div>
         <div class="path-actions">
+          <button class="lab-open" data-act="lab">🧪 <span>Laboratorio</span></button>
           <button class="chal-open" data-act="chal">🏅 <span>Desafíos</span></button>
           ${canClose ? '<button class="path-close" data-act="close" title="Volver al nivel">✕</button>' : ''}
         </div>
@@ -93,6 +95,7 @@ export class PathScreen {
   onClick(e) {
     if (e.target.closest('[data-act="close"]')) { this.hide(); this.onClose?.(); return; }
     if (e.target.closest('[data-act="chal"]')) { sfx.tap(); this.hide(); this.onChallenges?.(); return; }
+    if (e.target.closest('[data-act="lab"]')) { sfx.tap(); this.hide(); this.onLab?.(); return; }
     const start = e.target.closest('[data-start]');
     if (start) { sfx.tap(); this.hide(); this.onStart(+start.dataset.start); return; }
     const node = e.target.closest('[data-node]');

@@ -1,84 +1,55 @@
-// Simulador cuántico de 2 qubits (amplitudes reales).
-// Qubit A = el gato principal, qubit B = el gato gemelo.
-// Índice del estado = a*2 + b  →  |00⟩, |01⟩, |10⟩, |11⟩
-// 0 = 😴 dormido, 1 = 😺 despierto
-
-const S = Math.SQRT1_2;
+// Estado cuántico del juego: 2 qubits con amplitudes complejas (usa qsim.js).
+// Qubit 0 = el gato Schrödi, qubit 1 = la gemela Qubita.
+// Índice del estado = a*2 + b  →  |00⟩, |01⟩, |10⟩, |11⟩ · 0 = 😴 dormido, 1 = 😺 despierto
+import { QSim, normalizePhase, fmtAmp } from './qsim.js';
 
 export class QState {
   constructor() { this.reset(); }
+  reset() { this.sim = new QSim(2); }
 
-  reset() { this.amp = [1, 0, 0, 0]; }
+  // Compuertas de los comandos clásicos del juego
+  x() { this.sim.op({ g: 'x', q: 0 }); }
+  h() { this.sim.op({ g: 'h', q: 0 }); }
+  cnot() { this.sim.op({ g: 'cx', q: 0, q2: 1 }); }
+  // Cualquier compuerta de la paleta Operations: { g, q, q2, theta }
+  apply(o) { return this.sim.op(o); }
+  get cl() { return this.sim.cl; } // bits clásicos de la última medición
 
-  // Compuerta X sobre el gato: dormido ⇄ despierto
-  x() {
-    const a = this.amp;
-    this.amp = [a[2], a[3], a[0], a[1]];
-  }
-
-  // Compuerta H (Hadamard) sobre el gato: crea / deshace superposición
-  h() {
-    const a = this.amp;
-    this.amp = [
-      S * (a[0] + a[2]), S * (a[1] + a[3]),
-      S * (a[0] - a[2]), S * (a[1] - a[3]),
-    ];
-  }
-
-  // CNOT: si el gato está despierto, voltea al gemelo
-  cnot() {
-    const a = this.amp;
-    this.amp = [a[0], a[1], a[3], a[2]];
-  }
-
-  probs() { return this.amp.map(v => v * v); }
-
-  // Probabilidad de que el gato principal esté despierto
-  pA1() { const p = this.probs(); return p[2] + p[3]; }
-  pB1() { const p = this.probs(); return p[1] + p[3]; }
+  probs() { return this.sim.probs(); }
+  pA1() { return this.sim.p1(0); }
+  pB1() { return this.sim.p1(1); }
 
   isSuperposedA() { const p = this.pA1(); return p > 0.01 && p < 0.99; }
   isCertainA(bit) { return bit ? this.pA1() > 0.99 : this.pA1() < 0.01; }
 
-  // Entrelazado = el estado no se puede separar (det ≠ 0)
+  // Entrelazado = el estado no se puede separar: |a00·a11 − a01·a10| ≠ 0
   isEntangled() {
-    const a = this.amp;
-    return Math.abs(a[0] * a[3] - a[1] * a[2]) > 0.05;
+    const [a0, a1, a2, a3] = this.sim.amps();
+    const re = (a0[0] * a3[0] - a0[1] * a3[1]) - (a1[0] * a2[0] - a1[1] * a2[1]);
+    const im = (a0[0] * a3[1] + a0[1] * a3[0]) - (a1[0] * a2[1] + a1[1] * a2[0]);
+    return Math.hypot(re, im) > 0.05;
   }
 
   // Medir ambos gatos: el estado colapsa
-  measure() {
-    const p = this.probs();
-    let r = Math.random(), idx = 3;
-    for (let i = 0; i < 4; i++) { if (r < p[i]) { idx = i; break; } r -= p[i]; }
-    this.amp = [0, 0, 0, 0];
-    this.amp[idx] = 1;
-    return { a: idx >> 1, b: idx & 1 };
-  }
+  measure() { const [a, b] = this.sim.measureAll(); return { a, b }; }
 
-  // Texto tipo "0.71|😴⟩ + 0.71|😺⟩"
+  // Texto tipo "0.71|😴⟩ + 0.71i|😺⟩" (sin la fase global, que no se puede medir)
   ket(withTwin) {
     const em = ['😴', '😺'];
-    if (withTwin) {
-      const terms = [];
-      this.amp.forEach((v, i) => {
-        if (Math.abs(v) > 0.005) terms.push({ v, label: em[i >> 1] + em[i & 1] });
-      });
-      return fmt(terms);
+    const amps = normalizePhase(this.sim.amps());
+    const terms = [];
+    if (withTwin) amps.forEach((v, i) => terms.push({ v, label: em[i >> 1] + em[i & 1] }));
+    else {
+      // Sin gemelo, el qubit 1 siempre vale 0: basta con |00⟩ y |10⟩
+      terms.push({ v: amps[0], label: '😴' }, { v: amps[2], label: '😺' });
     }
-    // Sin gemelo, B siempre vale 0: basta con amp[0] y amp[2]
-    const out = [];
-    if (Math.abs(this.amp[0]) > 0.005) out.push({ v: this.amp[0], label: '😴' });
-    if (Math.abs(this.amp[2]) > 0.005) out.push({ v: this.amp[2], label: '😺' });
-    return fmt(out);
+    const shown = terms.filter(t => Math.hypot(...t.v) > 0.005);
+    return shown.map((t, i) => {
+      let s = fmtAmp(t.v, true);
+      const neg = s.startsWith('−');
+      if (neg) s = s.slice(1);
+      const sign = i === 0 ? (neg ? '−' : '') : (neg ? ' − ' : ' + ');
+      return `${sign}${s}|${t.label}⟩`;
+    }).join('');
   }
-}
-
-function fmt(terms) {
-  return terms.map((t, i) => {
-    const mag = Math.abs(t.v);
-    const num = mag > 0.995 ? '' : mag.toFixed(2);
-    const sign = t.v < 0 ? (i === 0 ? '−' : ' − ') : (i === 0 ? '' : ' + ');
-    return `${sign}${num}|${t.label}⟩`;
-  }).join('');
 }

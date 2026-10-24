@@ -25,6 +25,19 @@ Como Swift Playgrounds enseña Swift de verdad, aquí el niño escribe **Python 
 
 El juego no necesita instalar Qiskit: usa su propio simulador de 2 qubits en el navegador (`js/quantum.js`), que da los mismos resultados para estas compuertas. El botón **📋 Script de Qiskit** genera un script ejecutable (`pip install qiskit`) con el circuito del niño.
 
+## ⚛️ Paleta Operations y circuitos (como IBM Quantum Composer)
+
+| | |
+|---|---|
+| ![Paleta](docs/screenshots/25-paleta-composer.png) **Paleta Operations y el circuito dibujado mientras escribes** | ![Laboratorio](docs/screenshots/26-laboratorio.png) **🧪 Laboratorio: modo libre de 1 a 3 qubits** |
+
+- **Las 25 operaciones del Composer**: H, X, CNOT, Toffoli, SWAP, I, T, S, Z, T†, S†, P, RZ, medir, reset, barrera, control (CZ), `if`, `for`, `while`, `box`, √X, Y, RX, RY. Toca el número de una línea para cambiar de qubit o de ángulo (π/4, π/2, π, 3π/2).
+- **El circuito se dibuja en vivo** con los colores del Composer, y se exporta a **Qiskit** y **OpenQASM 3** (`if_test`, `while_loop`, `box`, `for`).
+- Simulador propio con **números complejos** (`js/qsim.js`), verificado con identidades del curso: H Z H = X, S·S = Z, T·T = S, √X·√X = X, estados de Bell y GHZ, Toffoli.
+- **🧪 Laboratorio**: probabilidades con 1024 disparos, vector de estado (la fase es el color) y discos de fase por qubit (pureza 1 = independiente, 0.5 = entrelazado). Ejemplos: moneda cuántica, interferencia, X = HZH, fases S y T, Bell, GHZ, sumador medio con Toffoli, rotación RY.
+
+![Qiskit y OpenQASM](docs/screenshots/27-qiskit-openqasm.png)
+
 ## 🏅 35 desafíos extra
 
 | | |
@@ -119,6 +132,12 @@ js/onboarding-data.js     Textos, unidades y preguntas de cada nivel
 js/lang.js                Python · Qiskit / Español: traducción y script de Qiskit
 js/challenges.js          Desafíos: lista, Python, quiz, bloques y simulador
 js/challenges-data.js     Los 35 desafíos
+js/qsim.js                Simulador de 1 a 3 qubits con amplitudes complejas
+js/ops.js                 Las 25 operaciones del Composer (Qiskit, español, OpenQASM)
+js/palette.js             Paleta Operations
+js/circuit.js             Dibujo del circuito (SVG)
+js/codegen.js             Exportar a Qiskit y OpenQASM 3
+js/lab.js                 🧪 Laboratorio (modo libre)
 landing/                  Landing page (usa el motor 3D del juego)
 ```
 

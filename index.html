@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="icon" href="assets/logo.webp" type="image/webp" />
-  <link rel="stylesheet" href="style.css?v=4" />
+  <link rel="stylesheet" href="style.css?v=5" />
   <script type="importmap">
     {
       "imports": {
@@ -44,6 +44,7 @@
       <section class="left-pane">
         <article id="instructions" class="instructions"></article>
         <div class="divider"></div>
+        <div id="circuit-box" class="circuit-box hidden"></div>
         <div id="code" class="code" aria-label="Tu código"></div>
       </section>
 
@@ -117,6 +118,7 @@
         <button class="tool" id="btn-redo" title="Rehacer">↷</button>
       </div>
       <div class="chips" id="chips"></div>
+      <div id="ops" class="hidden"></div>
       <div class="tb-group">
         <button class="tool" id="btn-back" title="Borrar línea">⌫</button>
         <button class="tool" id="btn-enter" title="Salir del bloque { }">↵</button>
@@ -126,6 +128,9 @@
 
   <!-- Ruta de aprendizaje (pantalla de inicio) -->
   <div class="path hidden" id="path"></div>
+
+  <!-- Laboratorio (modo libre tipo IBM Quantum Composer) -->
+  <div class="path lab hidden" id="lab"></div>
 
   <!-- Desafíos: lista y reproductor -->
   <div class="path hidden" id="chal-list"></div>
@@ -144,6 +149,6 @@
 
   <div class="loading" id="loading"><img class="spinner" src="assets/logo.webp" alt="QisCat Learning" /><p>Abriendo la caja…</p></div>
 
-  <script type="module" src="js/main.js?v=4"></script>
+  <script type="module" src="js/main.js?v=5"></script>
 </body>
 </html>

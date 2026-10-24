@@ -1,8 +1,13 @@
 // Editor de código estilo Swift Playgrounds: se escribe tocando comandos.
-// El programa es una lista de líneas: {t:'cmd', name} | {t:'for', n} | {t:'end'}
-import { getLang, cmd, loopHead, QUANTUM } from './lang.js';
+// El programa es una lista de líneas:
+//   {t:'cmd', name}                       comandos del gato (avanzar, recogerPez, medir…)
+//   {t:'gate', g, q, q2, q3, a}           compuertas de la paleta Operations
+//   {t:'for', n} | {t:'if'} | {t:'while'} | {t:'box'}  … {t:'end'}   bloques
+import { getLang, cmd, QUANTUM } from './lang.js';
+import { OP, BLOCK_TYPES, ANGLES, newGate, gatePy, gateEs, blockHead } from './ops.js';
 
 const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const isHead = ln => BLOCK_TYPES.has(ln.t);
 
 export class CodeEditor {
   constructor(el, onChange) {
@@ -19,6 +24,8 @@ export class CodeEditor {
     el.tabIndex = 0;
     el.addEventListener('keydown', e => this.onKey(e));
   }
+
+  get qubits() { return this.ctx.n ?? (this.ctx.twin ? 2 : 1); }
 
   load(lines) {
     this.lines = lines ? JSON.parse(JSON.stringify(lines)) : [];
@@ -38,28 +45,36 @@ export class CodeEditor {
 
   changed() { this.render(); this.onChange?.(this.lines); }
 
-  insert(name) {
+  // name: comando del gato ('avanzar', 'for', …) o id de la paleta Operations ('h', 'rx', 'if', …)
+  // q: qubit donde se coloca la compuerta (en el laboratorio se elige)
+  insert(name, q = 0) {
     if (this.locked) return;
     this.snapshot();
-    if (name === 'for') {
-      this.lines.splice(this.cursor, 0, { t: 'for', n: 2 }, { t: 'end' });
-      this.cursor += 1;
-    } else {
-      this.lines.splice(this.cursor, 0, { t: 'cmd', name });
-      this.cursor += 1;
+    let add;
+    if (name === 'for') add = [{ t: 'for', n: 2 }, { t: 'end' }];
+    else if (BLOCK_TYPES.has(name)) add = [{ t: name }, { t: 'end' }];
+    else if (name === 'measure') add = [{ t: 'cmd', name: 'medir' }];
+    else if (OP[name]) {
+      const g = newGate(name);
+      if (OP[name].kind === 'g2') { g.q = q; g.q2 = (q + 1) % this.qubits; }
+      else if (OP[name].kind !== 'g3') g.q = q;
+      add = [g];
     }
+    else add = [{ t: 'cmd', name }];
+    this.lines.splice(this.cursor, 0, ...add);
+    this.cursor += 1;
     this.changed();
   }
 
+  // índice de la línea que cierra/abre el bloque de la línea i
   matchOf(i) {
-    // índice de la llave que corresponde a la línea i (for ↔ end)
     const L = this.lines;
-    if (L[i].t === 'for') {
+    if (isHead(L[i])) {
       let d = 0;
-      for (let j = i; j < L.length; j++) { if (L[j].t === 'for') d++; if (L[j].t === 'end' && --d === 0) return j; }
+      for (let j = i; j < L.length; j++) { if (isHead(L[j])) d++; if (L[j].t === 'end' && --d === 0) return j; }
     } else if (L[i].t === 'end') {
       let d = 0;
-      for (let j = i; j >= 0; j--) { if (L[j].t === 'end') d++; if (L[j].t === 'for' && --d === 0) return j; }
+      for (let j = i; j >= 0; j--) { if (L[j].t === 'end') d++; if (isHead(L[j]) && --d === 0) return j; }
     }
     return -1;
   }
@@ -69,7 +84,7 @@ export class CodeEditor {
     this.snapshot();
     const i = this.cursor - 1;
     const line = this.lines[i];
-    if (line.t === 'cmd') {
+    if (line.t === 'cmd' || line.t === 'gate') {
       this.lines.splice(i, 1);
       this.cursor = i;
     } else {
@@ -82,12 +97,12 @@ export class CodeEditor {
     this.changed();
   }
 
-  // ↵ : salir del bloque { } actual
+  // ↵ : salir del bloque actual
   exitBlock() {
     if (this.locked) return;
     let d = 0;
     for (let j = this.cursor; j < this.lines.length; j++) {
-      if (this.lines[j].t === 'for') d++;
+      if (isHead(this.lines[j])) d++;
       if (this.lines[j].t === 'end') { if (d === 0) { this.cursor = j + 1; this.render(); return; } d--; }
     }
   }
@@ -97,10 +112,27 @@ export class CodeEditor {
   onClick(e) {
     if (this.locked) return;
     const num = e.target.closest('[data-num]');
-    if (num) {
+    if (num) { // veces del for
       const i = +num.dataset.num;
       this.snapshot();
       this.lines[i].n = this.lines[i].n % 9 + 1;
+      this.changed();
+      return;
+    }
+    const qb = e.target.closest('[data-q]');
+    if (qb) { // cambiar de qubit
+      const ln = this.lines[+qb.dataset.q];
+      this.snapshot();
+      if (OP[ln.g].kind === 'g2') [ln.q, ln.q2] = [ln.q2, ln.q];
+      else if (OP[ln.g].kind !== 'g3') ln.q = (ln.q + 1) % this.qubits;
+      this.changed();
+      return;
+    }
+    const ang = e.target.closest('[data-ang]');
+    if (ang) { // cambiar el ángulo
+      const ln = this.lines[+ang.dataset.ang];
+      this.snapshot();
+      ln.a = ((ln.a ?? 1) + 1) % ANGLES.length;
       this.changed();
       return;
     }
@@ -126,19 +158,43 @@ export class CodeEditor {
   // En Python, el encabezado de Qiskit (no se puede editar)
   preamble() {
     if (getLang() !== 'py' || !this.ctx.quantum) return '';
-    const n = this.ctx.twin ? 2 : 1;
+    const n = this.qubits;
+    const usesPi = this.lines.some(l => l.t === 'gate' && OP[l.g].kind === 'g1p');
     return `<div class="pre"><span class="kw">from</span> qiskit <span class="kw">import</span> QuantumCircuit</div>
-      <div class="pre">qc = QuantumCircuit(<span class="num">${n}</span>)  <span class="cm"># qubit 0 = Schrödi${this.ctx.twin ? ', qubit 1 = Qubita' : ''}</span></div>
+      ${usesPi ? '<div class="pre"><span class="kw">from</span> numpy <span class="kw">import</span> pi</div>' : ''}
+      <div class="pre">qc = QuantumCircuit(<span class="num">${n}</span>)  <span class="cm"># qubit 0 = Schrödi${n > 1 ? ', qubit 1 = Qubita' : ''}${n > 2 ? ', qubit 2' : ''}</span></div>
       <div class="pre gap"></div>`;
   }
 
-  // Colorea una línea de código según el lenguaje
+  // Colorea un comando del gato según el lenguaje
   paint(name) {
     const code = esc(cmd(name));
     if (getLang() !== 'py') return `<span class="${QUANTUM.has(name) ? 'qfn' : 'fn'}">${code}</span>`;
     const [obj, rest] = code.split(/\.(.*)/s);
     const args = rest.replace(/(\d+)/g, '<span class="num">$1</span>');
     return `<span class="${QUANTUM.has(name) ? 'qobj' : 'obj'}">${obj}</span>.<span class="${QUANTUM.has(name) ? 'qfn' : 'fn'}">${args}</span>`;
+  }
+
+  // Colorea una compuerta; los qubits y ángulos se pueden tocar para cambiarlos
+  paintGate(ln, i) {
+    const o = OP[ln.g];
+    const multi = this.qubits > 1;
+    const q = (v, k) => multi
+      ? `<span class="num tap" data-q="${i}" title="Toca para cambiar de qubit">${v}</span>`
+      : `<span class="num">${v}</span>`;
+    const ang = () => `<span class="num tap ang" data-ang="${i}" title="Toca para cambiar el ángulo">${getLang() === 'py' ? ANGLES[ln.a ?? 1].py : ANGLES[ln.a ?? 1].es}</span>`;
+    if (getLang() !== 'py') {
+      const txt = esc(gateEs(ln));
+      return `<span class="qfn op-${o.color}">${o.kind === 'g1p' ? txt.replace(esc(ANGLES[ln.a ?? 1].es), ang()) : txt}</span>`;
+    }
+    let args;
+    if (o.kind === 'g1p') args = `${ang()}, ${q(ln.q)}`;
+    else if (o.kind === 'g2') args = `${q(ln.q)}, ${q(ln.q2)}`;
+    else if (o.kind === 'g3') args = `${ln.q}, ${ln.q2}, ${ln.q3}`;
+    else if (o.kind === 'barrier') args = '';
+    else args = q(ln.q);
+    const name = ln.g === 'i' ? 'id' : ln.g;
+    return `<span class="qobj">qc</span>.<span class="qfn op-${o.color}">${name}</span>(${args})`;
   }
 
   render() {
@@ -150,20 +206,28 @@ export class CodeEditor {
     }
     const py = getLang() === 'py';
     let depth = 0, html = pre;
+    const stack = [];
     this.lines.forEach((ln, i) => {
       if (this.cursor === i) html += caret.replace('caret', `caret" style="margin-left:${depth * 22}px`);
       if (ln.t === 'end') depth--;
       const pad = `style="padding-left:${depth * 22 + 4}px"`;
       const run = this.running === i ? ' running' : '';
       let code;
-      const tap = `<span class="num tap" data-num="${i}" title="Toca para cambiar cuántas veces">${ln.n}</span>`;
-      if (ln.t === 'for') code = py
-        ? `<span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(${tap}):`
-        : `<span class="kw">for</span> i <span class="kw">in</span> <span class="num">1</span> ... ${tap} {`;
-      else if (ln.t === 'end') code = py ? '<span class="cm"># fin del for</span>' : '}';
+      if (ln.t === 'for') {
+        const tap = `<span class="num tap" data-num="${i}" title="Toca para cambiar cuántas veces">${ln.n}</span>`;
+        code = py
+          ? `<span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(${tap}):`
+          : `<span class="kw">for</span> i <span class="kw">in</span> <span class="num">1</span> ... ${tap} {`;
+      } else if (isHead(ln)) {
+        code = `<span class="kw">${esc(blockHead(ln, getLang()))}</span>`;
+      } else if (ln.t === 'end') {
+        const head = stack.pop();
+        code = py ? `<span class="cm"># fin del ${head || 'bloque'}</span>` : '}';
+      } else if (ln.t === 'gate') code = this.paintGate(ln, i);
       else code = this.paint(ln.name);
+      if (isHead(ln)) stack.push(ln.t);
       html += `<div class="line${run}" data-i="${i}" ${pad}>${code}</div>`;
-      if (ln.t === 'for') depth++;
+      if (isHead(ln)) depth++;
     });
     if (this.cursor === this.lines.length) html += caret;
     this.el.innerHTML = html;
@@ -175,37 +239,36 @@ export class CodeEditor {
     if (i >= 0) this.el.querySelector(`[data-i="${i}"]`)?.classList.add('running');
   }
 
-  // Convierte el programa en una lista de pasos (los bucles se desenrollan)
-  compile() {
-    const steps = [];
+  // Árbol del programa: [{ i, ln, body? }] — se ejecuta paso a paso (if/while dependen de mediciones)
+  tree() {
     const L = this.lines;
-    const walk = (from, to) => {
+    const build = (from, to) => {
+      const out = [];
       for (let i = from; i < to; i++) {
         const ln = L[i];
-        if (ln.t === 'cmd') steps.push({ name: ln.name, line: i });
-        else if (ln.t === 'for') {
+        if (isHead(ln)) {
           const j = this.matchOf(i);
-          for (let k = 0; k < ln.n; k++) {
-            steps.push({ name: '__loop', line: i });
-            walk(i + 1, j);
-            if (steps.length > 500) return;
-          }
-          i = j;
-        }
+          out.push({ i, ln, body: build(i + 1, j < 0 ? to : j) });
+          i = j < 0 ? to : j;
+        } else if (ln.t !== 'end') out.push({ i, ln });
       }
+      return out;
     };
-    walk(0, L.length);
-    return steps;
+    return build(0, L.length);
   }
 
   toText() {
     let d = 0;
+    const py = getLang() === 'py';
     return this.lines.map(ln => {
       if (ln.t === 'end') d--;
-      const py = getLang() === 'py';
-      const s = '    '.repeat(Math.max(d, 0)) + (ln.t === 'for' ? loopHead(ln.n) : ln.t === 'end' ? (py ? '# fin del for' : '}') : cmd(ln.name));
-      if (ln.t === 'for') d++;
-      return s;
+      let s;
+      if (isHead(ln)) s = blockHead(ln, getLang());
+      else if (ln.t === 'end') s = py ? '# fin' : '}';
+      else if (ln.t === 'gate') s = py ? gatePy(ln) : gateEs(ln);
+      else s = cmd(ln.name);
+      if (isHead(ln)) d++;
+      return '    '.repeat(Math.max(d - (isHead(ln) ? 1 : 0), 0)) + s;
     }).join('\n');
   }
 }

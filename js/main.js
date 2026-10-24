@@ -1,16 +1,21 @@
 // QisCat Learning — lógica principal del juego
 import { LEVELS, COMMANDS, GLOSSARY } from './levels.js';
 import { World, DIRS, WALKABLE } from './world.js';
-import { CodeEditor } from './editor.js?v=4';
-import { QState } from './quantum.js';
+import { CodeEditor } from './editor.js?v=5';
+import { QState } from './quantum.js?v=5';
 import { sfx, sound } from './audio.js';
 import { Tutor } from './tutor.js';
 import { Progress } from './progress.js?v=4';
-import { PathScreen } from './path.js?v=4';
+import { PathScreen } from './path.js?v=5';
 import { showOnboarding } from './onboarding.js?v=4';
 import { ONBOARDING, UNITS } from './onboarding-data.js?v=4';
 import { Challenges } from './challenges.js';
-import { LANGS, getLang, setLang, cmd, tr, trCode, QUANTUM, qiskitScript } from './lang.js';
+import { LANGS, getLang, setLang, cmd, tr, trCode, QUANTUM } from './lang.js';
+import { OP, toOp } from './ops.js';
+import { renderPalette } from './palette.js';
+import { renderCircuit } from './circuit.js';
+import { toQiskit, toQasm, circuitItems } from './codegen.js';
+import { Lab } from './lab.js';
 
 const $ = id => document.getElementById(id);
 const SAVE_KEY = 'qiscat-learning-v1';
@@ -22,7 +27,7 @@ setLang(save.lang || 'py');
 
 const world = new World($('canvas-host'));
 const qs = new QState();
-const editor = new CodeEditor($('code'), lines => { save.code[level().id] = lines; persist(); });
+const editor = new CodeEditor($('code'), lines => { save.code[level().id] = lines; persist(); renderCircuitPanel(); });
 const tutor = new Tutor(tutorContext);
 
 let idx = progress.isUnlocked(save.last ?? 0) ? Math.min(save.last ?? 0, LEVELS.length - 1) : progress.current();
@@ -98,10 +103,10 @@ function renderPanel() {
     sfx.tap(); renderPanel();
   });
   $('btn-qiskit') && ($('btn-qiskit').onclick = showQiskit);
-  // chips de comandos
+  // chips del gato (y en los niveles cuánticos, la paleta Operations del Composer)
   const chips = $('chips');
   chips.innerHTML = '';
-  L.commands.forEach(name => {
+  L.commands.filter(name => !quantum || (!QUANTUM.has(name) && name !== 'for')).forEach(name => {
     const b = document.createElement('button');
     b.className = 'chip' + (QUANTUM.has(name) ? ' q' : '') + (name === 'for' ? ' kw' : '');
     b.textContent = cmd(name);
@@ -109,23 +114,59 @@ function renderPanel() {
     b.onclick = () => { sfx.tap(); editor.insert(name); };
     chips.appendChild(b);
   });
+  $('app').classList.toggle('with-ops', quantum);
+  $('ops').classList.toggle('hidden', !quantum);
+  if (quantum) {
+    const disabled = { ccx: 'Necesita 3 qubits: pruébala en el 🧪 Laboratorio' };
+    if (!L.twin) ['cx', 'swap', 'cz'].forEach(id => disabled[id] = 'Necesita a la gemela Qubita (2 qubits). La usarás en «Gatos entrelazados»');
+    renderPalette($('ops'), {
+      compact: true, title: false, disabled,
+      onPick: (id, why) => { if (why) return showToast(`🔒 ${why}`, false); sfx.tap(); editor.insert(id); },
+    });
+  }
   editor.setContext({ quantum, twin: !!L.twin });
+  renderCircuitPanel();
 }
 
-// Script de Qiskit ejecutable con el circuito del niño
+// Circuito al estilo IBM Quantum Composer, se dibuja mientras escribes
+function renderCircuitPanel() {
+  const L = level();
+  const box = $('circuit-box');
+  const quantum = L.commands.some(c => QUANTUM.has(c));
+  box.classList.toggle('hidden', !quantum);
+  if (!quantum) return;
+  const n = L.twin ? 2 : 1;
+  box.innerHTML = `<div class="circ-head"><b>🔌 Tu circuito</b><span>como en IBM Quantum Composer</span></div>
+    <div class="circ-scroll">${renderCircuit(circuitItems(editor.tree()), n, { names: ['Schrödi', 'Qubita'] })}</div>`;
+}
+
+// Script de Qiskit / OpenQASM 3 con el circuito del niño
 function showQiskit() {
   const L = level();
-  const code = qiskitScript(editor.compile(), { twin: !!L.twin, title: L.title });
+  const tree = editor.tree(), n = L.twin ? 2 : 1;
+  const codes = { qiskit: toQiskit(tree, { n, title: L.title }), qasm: toQasm(tree, { n }) };
+  showCode(codes, renderCircuit(circuitItems(tree), n, { names: ['Schrödi', 'Qubita'] }));
+}
+function showCode(codes, svg) {
   const esc = t => t.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  let tab = 'qiskit';
   modal(`
     <div class="big">🐍</div>
-    <h1>Tu circuito en Qiskit</h1>
-    <p>Este es código de <b>Qiskit</b>, la herramienta de IBM que usan los científicos para programar computadoras cuánticas de verdad. Cópialo y córrelo en Python.</p>
-    <pre class="qk-code">${esc(code)}</pre>
+    <h1>Tu circuito cuántico</h1>
+    <p>Código de verdad: <b>Qiskit</b> (Python) y <b>OpenQASM 3</b>, como en IBM Quantum Composer. Cópialo y córrelo.</p>
+    <div class="circ-scroll modal-circ">${svg}</div>
+    <div class="seg code-tabs"><button data-tab="qiskit" class="on">🐍 Qiskit</button><button data-tab="qasm">⚛️ OpenQASM 3</button></div>
+    <pre class="qk-code" id="m-code">${esc(codes.qiskit)}</pre>
     <div class="btns"><button id="m-copy">📋 Copiar</button><button class="primary" id="m-ok">Listo</button></div>`);
   $('m-ok').onclick = closeModal;
+  document.querySelectorAll('.code-tabs [data-tab]').forEach(b => b.onclick = () => {
+    tab = b.dataset.tab;
+    document.querySelectorAll('.code-tabs button').forEach(x => x.classList.toggle('on', x === b));
+    $('m-code').textContent = codes[tab];
+    $('m-copy').textContent = '📋 Copiar';
+  });
   $('m-copy').onclick = async () => {
-    try { await navigator.clipboard.writeText(code); $('m-copy').textContent = '✅ ¡Copiado!'; }
+    try { await navigator.clipboard.writeText(codes[tab]); $('m-copy').textContent = '✅ ¡Copiado!'; }
     catch { $('m-copy').textContent = 'Selecciona y copia el texto'; }
   };
 }
@@ -189,8 +230,8 @@ class Fail extends Error {}
 async function run() {
   if (running) { stop(); return; }
   hideToast();
-  const steps = editor.compile();
-  if (!steps.length) { showToast('✏️ Primero escribe tu código: toca los comandos de la barra de abajo.', false); return; }
+  const tree = editor.tree();
+  if (!tree.length) { showToast('✏️ Primero escribe tu código: toca los comandos de la barra de abajo.', false); return; }
   resetWorld();
   const token = running = { stopped: false };
   editor.locked = true;
@@ -202,13 +243,34 @@ async function run() {
 
   try {
     await world.wait(250);
-    for (const step of steps) {
-      if (token.stopped) return;
-      editor.setRunning(step.line);
-      if (step.name === '__loop') { await world.wait(120); continue; }
-      await exec(step.name);
-      await world.wait(90);
-    }
+    let count = 0;
+    const execNodes = async nodes => {
+      for (const node of nodes) {
+        if (token.stopped) return;
+        if (++count > 400) throw new Fail('🔁 Tu programa da demasiadas vueltas. ¿Hay un <code>while</code> que nunca termina?');
+        editor.setRunning(node.i);
+        const ln = node.ln;
+        if (node.body) {
+          await world.wait(140);
+          if (ln.t === 'for') for (let k = 0; k < ln.n && !token.stopped; k++) await execNodes(node.body);
+          else if (ln.t === 'if') {
+            if (qs.cl[0] === 1) await execNodes(node.body);
+            else world.popLabel('if: salió 😴, se salta', world.cat.group.position);
+          } else if (ln.t === 'while') {
+            let k = 0;
+            while (qs.cl[0] === 1 && !token.stopped) {
+              if (++k > 12) throw new Fail('🔁 El <code>while</code> dio más de 12 vueltas. ¡Mide dentro del bucle para que pueda terminar!');
+              await execNodes(node.body);
+            }
+          } else await execNodes(node.body); // box
+          continue;
+        }
+        if (ln.t === 'gate') await execGate(ln);
+        else await exec(ln.name);
+        await world.wait(90);
+      }
+    };
+    await execNodes(tree);
     if (token.stopped) return;
     editor.setRunning(-1);
     checkGoal();
@@ -234,6 +296,23 @@ function finishRun() {
   $('btn-run').classList.remove('stop');
   $('run-label').textContent = 'Ejecutar mi código';
   $('btn-run').querySelector('.play').textContent = '▶';
+}
+
+// Compuerta de la paleta Operations
+async function execGate(ln) {
+  const L = level(), o = OP[ln.g];
+  if (o.kind === 'g2' && !L.twin) throw new Fail('🐱 Esta compuerta necesita a la gemela Qubita.');
+  if (o.kind === 'g3') throw new Fail('🧪 Toffoli necesita 3 qubits: pruébala en el Laboratorio.');
+  if (ln.g === 'barrier') { world.popLabel('┆ barrera', world.cat.group.position); await world.wait(250); return; }
+  const fx = { red: 0xfa4d56, blue: 0x4589ff, light: 0x7fb3ff, gray: 0xa8a8a8, pink: 0xff7eb6 }[o.color];
+  ln.g === 'h' ? sfx.h() : ['cx', 'cz', 'swap'].includes(ln.g) ? sfx.link() : sfx.x();
+  qs.apply(toOp(ln));
+  world.gateFx(fx);
+  if (L.twin) world.setLink(qs.isEntangled());
+  updateHUD();
+  const who = ln.q === 1 && L.twin ? world.twin.group.position : world.cat.group.position;
+  world.popLabel(`${o.label === '⊕' ? 'X' : o.label}${o.kind === 'g1p' ? '(θ)' : ''} → ${qs.isSuperposedA() ? '😴+😺' : qs.isCertainA(1) ? '😺' : '😴'}`, who);
+  await world.wait(480);
 }
 
 async function exec(name) {
@@ -446,7 +525,8 @@ function welcome() {
 }
 
 // ---------- ruta de aprendizaje ----------
-const path = new PathScreen(progress, { onStart: startLevel, onChallenges: () => challenges.show() });
+const path = new PathScreen(progress, { onStart: startLevel, onChallenges: () => challenges.show(), onLab: () => lab.show() });
+const lab = new Lab({ save, persist, showCode, onBack: () => path.show({ canClose: true, focus: idx }) });
 const challenges = new Challenges(progress, { onBack: () => path.show({ canClose: true, focus: idx }), onChange: updateStats });
 $('btn-levels').onclick = $('btn-chapter').onclick = () => { stop(); hideToast(); path.show({ focus: idx, canClose: true }); };
 
