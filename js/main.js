@@ -5,8 +5,11 @@ import { CodeEditor } from './editor.js?v=5';
 import { QState } from './quantum.js?v=5';
 import { sfx, sound } from './audio.js';
 import { Tutor } from './tutor.js';
-import { Progress } from './progress.js?v=4';
-import { PathScreen } from './path.js?v=5';
+import { Progress } from './progress.js?v=6';
+import { PathScreen } from './path.js?v=6';
+import { Routes, RoutesScreen, ROUTE, flatItems } from './routes.js';
+import { MlPlayer } from './ml.js';
+import { CHALLENGES } from './challenges-data.js';
 import { showOnboarding } from './onboarding.js?v=4';
 import { ONBOARDING, UNITS } from './onboarding-data.js?v=4';
 import { Challenges } from './challenges.js';
@@ -492,7 +495,7 @@ function win() {
   $('m-next').onclick = () => {
     closeModal();
     const next = Math.min(idx + 1, LEVELS.length - 1);
-    path.show({ focus: last ? idx : next, unlocked: r.unlockedNext ? idx + 1 : -1, canClose: true });
+    path.show({ route: 'intro', focus: kOf(LEVELS[last ? idx : next].id), unlocked: r.unlockedNext ? kOf(LEVELS[idx + 1].id) : -1, canClose: true });
   };
 }
 
@@ -525,10 +528,34 @@ function welcome() {
 }
 
 // ---------- ruta de aprendizaje ----------
-const path = new PathScreen(progress, { onStart: startLevel, onChallenges: () => challenges.show(), onLab: () => lab.show() });
-const lab = new Lab({ save, persist, showCode, onBack: () => path.show({ canClose: true, focus: idx }) });
-const challenges = new Challenges(progress, { onBack: () => path.show({ canClose: true, focus: idx }), onChange: updateStats });
-$('btn-levels').onclick = $('btn-chapter').onclick = () => { stop(); hideToast(); path.show({ focus: idx, canClose: true }); };
+// Rutas al estilo IBM Quantum Learning → ruta Duolingo de cada una → niveles, lecciones y tutoriales
+const routes = new Routes(progress);
+const kOf = levelId => flatItems(ROUTE.intro).findIndex(it => it.level === levelId); // posición del nivel en su ruta
+const goHome = () => { updateStats(); home.show(); };
+const path = new PathScreen(progress, routes, {
+  onStart: startItem, onBack: goHome,
+  onChallenges: () => challenges.show(), onLab: () => lab.show(),
+});
+const lab = new Lab({ save, persist, showCode, onBack: goHome });
+const challenges = new Challenges(progress, { onBack: goHome, onChange: updateStats });
+const mlPlayer = new MlPlayer({ progress, rich, onClose: () => { updateStats(); path.show({ route: 'qml' }); } });
+const dailyPick = () => progress.dailyChallenge(CHALLENGES.filter(c => challenges.unlocked(c)).map(c => c.id));
+const home = new RoutesScreen(progress, routes, {
+  onRoute: id => path.show({ route: id }),
+  onLab: () => lab.show(),
+  onChallenges: () => challenges.show(),
+  onDaily: () => { const c = dailyPick(); if (c) { challenges.show(c.type); challenges.open(c); } },
+  dailyPick,
+});
+// Material de una ruta: nivel 3D, lección de ML o tutorial del laboratorio
+function startItem(it) {
+  if (it.level) return startLevel(LEVELS.findIndex(l => l.id === it.level));
+  if (it.ml) return mlPlayer.open(it.ml);
+  progress.markTut(it.tut);
+  updateStats();
+  lab.show(it.ex);
+}
+$('btn-levels').onclick = $('btn-chapter').onclick = () => { stop(); hideToast(); path.show({ route: 'intro', focus: kOf(level().id), canClose: true }); };
 
 // ---------- botones ----------
 $('btn-run').onclick = run;
@@ -599,7 +626,7 @@ function tutorContext() {
 
 // ---------- inicio ----------
 loadLevel(idx);
-path.show({ focus: progress.current() });
+home.show();
 setTimeout(() => {
   $('loading').style.opacity = 0;
   setTimeout(() => $('loading').remove(), 400);

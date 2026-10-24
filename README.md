@@ -8,6 +8,37 @@ Juego web 3D para niñas y niños (8–12 años) donde aprenden **computación c
 
 Juega en línea: **https://qiscat.isaihub.pro** (landing) · **https://qiscat.isaihub.pro/jugar/** (juego)
 
+## 🗺️ Rutas de aprendizaje (como IBM Quantum Learning)
+
+La pantalla de inicio copia la estructura de las *learning paths* de [IBM Quantum Learning](https://quantum.cloud.ibm.com/learning): cada ruta tiene nivel, tiempo, insignia y **materiales en orden**, con meta diaria de XP, reto del día (XP doble) y racha 🔥 para volver todos los días.
+
+| | |
+|---|---|
+| ![Rutas](docs/screenshots/28-rutas.png) **Rutas, meta diaria, reto del día e insignias** | ![Ruta ML](docs/screenshots/29-ruta-qml.png) **Ruta «Datos y Machine Learning cuántico»** |
+
+| Ruta | Nivel | Basada en | Contenido |
+|---|---|---|---|
+| 🐱 Introducción a lo cuántico | Principiante | *Basics of quantum information* | Información clásica → información cuántica → sistemas múltiples (9 niveles 3D + tutoriales del Composer) |
+| 📊 Datos y Machine Learning cuántico | Principiante | Ruta *Data science* (QML) | 6 lecciones: cada idea de estadística/ML con su equivalente cuántico y su código Qiskit |
+| 🗺️ Optimización · 🔍 Algoritmos | Intermedio | *Optimization* / *Algorithm development* | Próximamente |
+
+### Estadística / ML ⇄ cuántico (reto EdTech, Qiskit Fall Fest 2026)
+
+| Lección | Concepto clásico | Equivalente cuántico | Actividad |
+|---|---|---|---|
+| 🪙 Monedas y probabilidad | Distribución de probabilidad | Regla de Born, `qc.h` | Lanzar 1000 monedas clásicas y cuánticas |
+| 🎯 La moneda trucada | Bernoulli(p) | `qc.ry(θ)`, P = sin²(θ/2) | Fabricar monedas de 75%, 25% y 90% |
+| 🎲 Monte Carlo cuántico | Método de Monte Carlo | Muestreo con *shots* (error ≈ 1/√N) | Estimar π con dardos y una compuerta misteriosa |
+| 📉 Descenso de gradiente | Gradiente / *learning rate* | Regla de *parameter-shift* | Entrenar θ; con paso 25 el entrenamiento rebota |
+| 🧠 Clasificador cuántico | Perceptrón | Clasificador variacional (VQC) | Entrenar `qc.ry(w·x + b)` hasta 8/8 aciertos |
+| 🤝 Kernel cuántico | SVM y kernels | K(x, y) = \|⟨ψ(x)\|ψ(y)⟩\|² | Leer la matriz del kernel calculada por el circuito |
+
+Cada lección termina con su código real de Qiskit (`StatevectorSampler`, `Parameter`, `Statevector`).
+
+| | | |
+|---|---|---|
+| ![Gradiente](docs/screenshots/30-ml-gradiente.png) | ![Clasificador](docs/screenshots/31-ml-clasificador.png) | ![Kernel](docs/screenshots/32-ml-kernel.png) |
+
 ## Código real de Python con Qiskit
 
 Como Swift Playgrounds enseña Swift de verdad, aquí el niño escribe **Python con Qiskit**, la herramienta de IBM para programar computadoras cuánticas. Un selector cambia entre **🐍 Python · Qiskit** y **🇪🇸 Español**.
@@ -138,6 +169,8 @@ js/palette.js             Paleta Operations
 js/circuit.js             Dibujo del circuito (SVG)
 js/codegen.js             Exportar a Qiskit y OpenQASM 3
 js/lab.js                 🧪 Laboratorio (modo libre)
+js/routes.js              Rutas de aprendizaje (inicio), meta diaria, reto del día, insignias
+js/ml.js                  Lecciones de datos y Machine Learning cuántico
 landing/                  Landing page (usa el motor 3D del juego)
 ```
 

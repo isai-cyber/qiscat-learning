@@ -76,7 +76,8 @@ export class Lab {
     this.active = 0;
   }
 
-  show() {
+  // ex: índice de un ejemplo para abrir directo (tutoriales de las rutas)
+  show(ex) {
     const s = this.save.lab;
     this.root.innerHTML = `
       <header class="lab-top">
@@ -122,6 +123,7 @@ export class Lab {
     this.root.onclick = e => this.onClick(e);
     this.renderControls();
     this.refresh();
+    if (ex != null) this.root.querySelector(`[data-ex="${ex}"]`)?.click();
   }
   hide() { this.root.classList.add('hidden'); }
 

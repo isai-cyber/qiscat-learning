@@ -1,5 +1,8 @@
 // Progreso y gamificación: desbloqueo, estrellas, XP y racha diaria
 import { LEVELS } from './levels.js';
+import { CHALLENGES } from './challenges-data.js';
+
+export const DAILY_GOAL = 30; // XP por día
 
 const XP_PER_STAR = 5, XP_BASE = 10, XP_QUIZ = 5, XP_PRACTICE = 3;
 
@@ -15,6 +18,9 @@ export class Progress {
     save.quiz ||= {};
     save.onb ||= {};
     save.chal ||= {};
+    save.ml ||= {};       // lecciones de Machine Learning cuántico terminadas
+    save.tut ||= {};      // tutoriales del laboratorio vistos
+    save.daily ||= { day: null, xp: 0, bonus: null };
     save.xp ||= 0;
     save.streak ||= { count: 0, last: null };
     // progreso de versiones anteriores: los niveles ya terminados valen 1 estrella
@@ -56,12 +62,44 @@ export class Progress {
 
     this.s.done[id] = true;
     this.s.stars[id] = Math.max(prev, stars);
-    this.s.xp += xp;
+    this.gain(xp);
 
     const { count: streak, up: streakUp } = this.touchStreak();
     this.persist();
     return { stars, best: this.s.stars[id], xp, first, streak, streakUp, unlockedNext: first && i + 1 < LEVELS.length };
   }
+
+  // Suma XP total y del día (para la meta diaria)
+  gain(xp) {
+    this.s.xp += xp;
+    const d = this.s.daily, today = dayKey();
+    if (d.day !== today) { d.day = today; d.xp = 0; d.bonus = null; }
+    d.xp += xp;
+  }
+  get todayXp() { return this.s.daily.day === dayKey() ? this.s.daily.xp : 0; }
+
+  // Reto del día: un desafío desbloqueado distinto cada día (XP doble una vez)
+  dailyChallenge(unlockedIds) {
+    const pool = CHALLENGES.filter(c => unlockedIds.includes(c.id));
+    if (!pool.length) return null;
+    const k = [...dayKey()].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+    return pool[k % pool.length];
+  }
+  dailyClaimed() { return this.s.daily.day === dayKey() && this.s.daily.bonus; }
+
+  // Lecciones de ML y tutoriales
+  mlDone(id) { return this.s.ml[id]; }
+  recordMl(id, stars) {
+    const prev = this.s.ml[id];
+    const xp = prev ? (stars > prev.stars ? 5 : 3) : 15 + stars * 5;
+    this.s.ml[id] = { stars: Math.max(prev?.stars || 0, stars) };
+    this.gain(xp);
+    this.touchStreak();
+    this.persist();
+    return { xp, first: !prev };
+  }
+  tutSeen(id) { return !!this.s.tut[id]; }
+  markTut(id) { if (!this.s.tut[id]) { this.s.tut[id] = true; this.gain(5); this.touchStreak(); this.persist(); } }
 
   // Jugar hoy suma a la racha (una vez por día)
   touchStreak() {
@@ -83,16 +121,21 @@ export class Progress {
     if (!prev) xp = c.type === 'quiz' ? (stars === 3 ? 5 : 2) : base + (stars === 3 ? 5 : 0);
     else xp = stars > prev.stars ? 5 : 0;
     this.s.chal[c.id] = { stars: Math.max(prev?.stars || 0, stars) };
-    this.s.xp += xp;
+    // XP doble si es el reto del día (una vez por día)
+    let bonus = 0;
+    if (c.id === this.dailyId && !this.dailyClaimed()) { bonus = Math.max(xp, 10); }
+    this.gain(xp + bonus);
+    if (bonus) this.s.daily.bonus = c.id;
+    xp += bonus;
     this.touchStreak();
     this.persist();
-    return { xp, first: !prev };
+    return { xp, first: !prev, bonus };
   }
 
   recordQuiz(i, correct) {
     const id = LEVELS[i].id;
     let xp = 0;
-    if (correct && !this.s.quiz[id]) { xp = XP_QUIZ; this.s.xp += xp; }
+    if (correct && !this.s.quiz[id]) { xp = XP_QUIZ; this.gain(xp); }
     if (correct) this.s.quiz[id] = true;
     this.s.onb[id] = true;
     this.persist();
