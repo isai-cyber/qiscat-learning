@@ -7,13 +7,14 @@ const shuffle = a => { const b = [...a]; for (let i = b.length - 1; i > 0; i--) 
 
 // level: objeto de LEVELS · data: ONBOARDING[id] · unit: UNITS[chapter] · rich: formateador de texto
 // onQuiz(correct) → XP ganados. Devuelve una promesa que se resuelve al terminar o cerrar.
-export function showOnboarding({ level, index, data, unit, rich, onQuiz }) {
+// tr traduce comandos al lenguaje del editor; lang filtra diapositivas propias de un lenguaje.
+export function showOnboarding({ level, index, data, unit, rich, onQuiz, tr = t => t, lang }) {
   return new Promise(resolve => {
     const root = $('onb');
     root.style.setProperty('--unit', unit.color);
     root.style.setProperty('--unit-dark', unit.dark);
     const slides = [
-      ...data.slides,
+      ...data.slides.filter(s => !s.lang || s.lang === lang),
       { quiz: data.quiz },
       { final: true },
     ];
@@ -59,14 +60,14 @@ export function showOnboarding({ level, index, data, unit, rich, onQuiz }) {
       } else if (s.cmds) {
         body.innerHTML = `
           <h2 class="onb-h">✨ ¡Comando nuevo!</h2>
-          <div class="onb-cmds">${s.cmds.map(c => `<span class="onb-cmd">${esc(c)}</span>`).join('')}</div>
+          <div class="onb-cmds">${s.cmds.map(c => `<span class="onb-cmd">${esc(tr(c))}</span>`).join('')}</div>
           <p class="onb-p">${rich(s.text)}</p>`;
       } else if (s.quiz) {
         const q = s.quiz;
-        const opts = shuffle(q.options.map((t, i) => ({ t, ok: i === q.answer })));
+        const opts = shuffle(q.options.map((t, i) => ({ t: tr(t), ok: i === q.answer })));
         body.innerHTML = `
           <h2 class="onb-h">Pregunta rápida</h2>
-          <p class="onb-q">${esc(q.q).replace(/\n/g, '<br>')}</p>
+          <p class="onb-q">${esc(tr(q.q)).replace(/\n/g, '<br>')}</p>
           <div class="onb-opts">${opts.map((o, i) => `<button class="onb-opt" data-i="${i}"><span class="onb-key">${i + 1}</span><span class="onb-ot">${esc(o.t).replace(/\n/g, '<br>')}</span></button>`).join('')}</div>`;
         btn.textContent = 'Comprobar';
         btn.disabled = true;
@@ -102,12 +103,12 @@ export function showOnboarding({ level, index, data, unit, rich, onQuiz }) {
         if (picked.ok) {
           sfx.fish();
           foot.className = 'onb-foot good';
-          fb.innerHTML = `<b>¡Excelente!${xp ? ` +${xp} XP` : ''}</b><span>${esc(s.quiz.explain)}</span>`;
+          fb.innerHTML = `<b>¡Excelente!${xp ? ` +${xp} XP` : ''}</b><span>${esc(tr(s.quiz.explain))}</span>`;
         } else {
           sfx.fail();
           foot.className = 'onb-foot bad';
           const right = s._opts.find(o => o.ok).t.replace(/\n/g, ' ');
-          fb.innerHTML = `<b>Respuesta correcta: ${esc(right)}</b><span>${esc(s.quiz.explain)}</span>`;
+          fb.innerHTML = `<b>Respuesta correcta: ${esc(right)}</b><span>${esc(tr(s.quiz.explain))}</span>`;
         }
         btn.textContent = 'Continuar';
         return;

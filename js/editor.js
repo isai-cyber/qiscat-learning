@@ -1,8 +1,7 @@
 // Editor de código estilo Swift Playgrounds: se escribe tocando comandos.
 // El programa es una lista de líneas: {t:'cmd', name} | {t:'for', n} | {t:'end'}
-import { COMMANDS } from './levels.js';
+import { getLang, cmd, loopHead, QUANTUM } from './lang.js';
 
-const QUANTUM = new Set(['aplicarX', 'aplicarH', 'medir', 'entrelazar']);
 const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 
 export class CodeEditor {
@@ -15,6 +14,7 @@ export class CodeEditor {
     this.redoStack = [];
     this.running = -1;
     this.locked = false;
+    this.ctx = { quantum: false, twin: false };
     el.addEventListener('click', e => this.onClick(e));
     el.tabIndex = 0;
     el.addEventListener('keydown', e => this.onKey(e));
@@ -120,22 +120,48 @@ export class CodeEditor {
     else if ((e.metaKey || e.ctrlKey) && k.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? this.redo() : this.undo(); }
   }
 
+  // quantum: el nivel usa compuertas · twin: hay gato gemelo (2 qubits)
+  setContext(ctx) { this.ctx = ctx; this.render(); }
+
+  // En Python, el encabezado de Qiskit (no se puede editar)
+  preamble() {
+    if (getLang() !== 'py' || !this.ctx.quantum) return '';
+    const n = this.ctx.twin ? 2 : 1;
+    return `<div class="pre"><span class="kw">from</span> qiskit <span class="kw">import</span> QuantumCircuit</div>
+      <div class="pre">qc = QuantumCircuit(<span class="num">${n}</span>)  <span class="cm"># qubit 0 = Schrödi${this.ctx.twin ? ', qubit 1 = Qubita' : ''}</span></div>
+      <div class="pre gap"></div>`;
+  }
+
+  // Colorea una línea de código según el lenguaje
+  paint(name) {
+    const code = esc(cmd(name));
+    if (getLang() !== 'py') return `<span class="${QUANTUM.has(name) ? 'qfn' : 'fn'}">${code}</span>`;
+    const [obj, rest] = code.split(/\.(.*)/s);
+    const args = rest.replace(/(\d+)/g, '<span class="num">$1</span>');
+    return `<span class="${QUANTUM.has(name) ? 'qobj' : 'obj'}">${obj}</span>.<span class="${QUANTUM.has(name) ? 'qfn' : 'fn'}">${args}</span>`;
+  }
+
   render() {
     const caret = '<div class="caret"></div>';
+    const pre = this.preamble();
     if (!this.lines.length) {
-      this.el.innerHTML = caret + '<div class="placeholder">Toca un comando de abajo para escribir tu código ⬇️</div>';
+      this.el.innerHTML = pre + caret + '<div class="placeholder">Toca un comando de abajo para escribir tu código ⬇️</div>';
       return;
     }
-    let depth = 0, html = '';
+    const py = getLang() === 'py';
+    let depth = 0, html = pre;
     this.lines.forEach((ln, i) => {
       if (this.cursor === i) html += caret.replace('caret', `caret" style="margin-left:${depth * 22}px`);
       if (ln.t === 'end') depth--;
       const pad = `style="padding-left:${depth * 22 + 4}px"`;
       const run = this.running === i ? ' running' : '';
       let code;
-      if (ln.t === 'for') code = `<span class="kw">for</span> i <span class="kw">in</span> <span class="num">1</span> ... <span class="num tap" data-num="${i}" title="Toca para cambiar cuántas veces">${ln.n}</span> {`;
-      else if (ln.t === 'end') code = '}';
-      else code = `<span class="${QUANTUM.has(ln.name) ? 'qfn' : 'fn'}">${esc(COMMANDS[ln.name].code)}</span>`;
+      const tap = `<span class="num tap" data-num="${i}" title="Toca para cambiar cuántas veces">${ln.n}</span>`;
+      if (ln.t === 'for') code = py
+        ? `<span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(${tap}):`
+        : `<span class="kw">for</span> i <span class="kw">in</span> <span class="num">1</span> ... ${tap} {`;
+      else if (ln.t === 'end') code = py ? '<span class="cm"># fin del for</span>' : '}';
+      else code = this.paint(ln.name);
       html += `<div class="line${run}" data-i="${i}" ${pad}>${code}</div>`;
       if (ln.t === 'for') depth++;
     });
@@ -176,7 +202,8 @@ export class CodeEditor {
     let d = 0;
     return this.lines.map(ln => {
       if (ln.t === 'end') d--;
-      const s = '    '.repeat(Math.max(d, 0)) + (ln.t === 'for' ? `for i in 1 ... ${ln.n} {` : ln.t === 'end' ? '}' : COMMANDS[ln.name].code);
+      const py = getLang() === 'py';
+      const s = '    '.repeat(Math.max(d, 0)) + (ln.t === 'for' ? loopHead(ln.n) : ln.t === 'end' ? (py ? '# fin del for' : '}') : cmd(ln.name));
       if (ln.t === 'for') d++;
       return s;
     }).join('\n');

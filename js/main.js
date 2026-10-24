@@ -1,14 +1,16 @@
 // QisCat Learning — lógica principal del juego
 import { LEVELS, COMMANDS, GLOSSARY } from './levels.js';
 import { World, DIRS, WALKABLE } from './world.js';
-import { CodeEditor } from './editor.js';
+import { CodeEditor } from './editor.js?v=4';
 import { QState } from './quantum.js';
 import { sfx, sound } from './audio.js';
 import { Tutor } from './tutor.js';
-import { Progress } from './progress.js';
-import { PathScreen } from './path.js';
-import { showOnboarding } from './onboarding.js';
-import { ONBOARDING, UNITS } from './onboarding-data.js';
+import { Progress } from './progress.js?v=4';
+import { PathScreen } from './path.js?v=4';
+import { showOnboarding } from './onboarding.js?v=4';
+import { ONBOARDING, UNITS } from './onboarding-data.js?v=4';
+import { Challenges } from './challenges.js';
+import { LANGS, getLang, setLang, cmd, tr, trCode, QUANTUM, qiskitScript } from './lang.js';
 
 const $ = id => document.getElementById(id);
 const SAVE_KEY = 'qiscat-learning-v1';
@@ -16,6 +18,7 @@ const save = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}');
 save.done ||= {}; save.code ||= {};
 const persist = () => localStorage.setItem(SAVE_KEY, JSON.stringify(save));
 const progress = new Progress(save, persist);
+setLang(save.lang || 'py');
 
 const world = new World($('canvas-host'));
 const qs = new QState();
@@ -29,9 +32,10 @@ const level = () => LEVELS[idx];
 
 // ---------- texto con glosario ----------
 function rich(s) {
-  return s
+  const html = s
     .replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, term, label) => `<span class="gloss" data-term="${term}">${label || term}</span>`)
-    .replace(/`([^`]+)`/g, '<code>$1</code>');
+    .replace(/`([^`]+)`/g, (_, c) => `<code>${trCode(c)}</code>`);
+  return tr(html); // también los comandos escritos con <code> en HTML
 }
 const plain = s => s.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, t, l) => l || t).replace(/<[^>]+>/g, '').replace(/`/g, '');
 
@@ -62,31 +66,68 @@ function loadLevel(i) {
   $('btn-prev').disabled = i === 0;
   $('btn-next').disabled = i === LEVELS.length - 1 || !progress.isUnlocked(i + 1);
   $('btn-next').title = $('btn-next').disabled && i < LEVELS.length - 1 ? '🔒 Completa este nivel para desbloquear el siguiente' : 'Página siguiente';
-  $('instructions').innerHTML = `
-    <span class="chapter-tag">${L.chapter} · ${i + 1}/${LEVELS.length}</span>
-    <p><b>Objetivo:</b> ${rich(L.objective)}</p>
-    <p class="intro">${rich(L.intro)}</p>
-    <ol>${L.steps.map(s => `<li><span>${rich(s)}</span></li>`).join('')}</ol>
-    <button class="replay-onb" id="btn-onb">📖 Ver la introducción otra vez</button>`;
-  $('btn-onb').onclick = () => intro(i);
-  // chips de comandos
-  const chips = $('chips');
-  chips.innerHTML = '';
-  L.commands.forEach(name => {
-    const b = document.createElement('button');
-    const q = ['aplicarX', 'aplicarH', 'medir', 'entrelazar'].includes(name);
-    b.className = 'chip' + (q ? ' q' : '') + (name === 'for' ? ' kw' : '');
-    b.textContent = COMMANDS[name].label;
-    b.title = COMMANDS[name].tip;
-    b.onclick = () => { sfx.tap(); editor.insert(name); };
-    chips.appendChild(b);
-  });
+  renderPanel();
   editor.load(save.code[L.id]);
   history = [];
   lastResult = '';
   resetWorld();
   updateStats();
   return true;
+}
+
+// Instrucciones, selector de lenguaje y chips (cambian con el lenguaje)
+function renderPanel() {
+  const L = level(), i = idx;
+  const quantum = L.commands.some(c => QUANTUM.has(c));
+  $('instructions').innerHTML = `
+    <span class="chapter-tag">${L.chapter} · ${i + 1}/${LEVELS.length}</span>
+    <p><b>Objetivo:</b> ${rich(L.objective)}</p>
+    <p class="intro">${rich(L.intro)}</p>
+    <ol>${L.steps.map(s => `<li><span>${rich(s)}</span></li>`).join('')}</ol>
+    <button class="replay-onb" id="btn-onb">📖 Ver la introducción otra vez</button>
+    <div class="lang-row">
+      <div class="seg" role="group" aria-label="Lenguaje del código">
+        ${Object.entries(LANGS).map(([k, v]) => `<button data-lang="${k}" class="${getLang() === k ? 'on' : ''}">${k === 'py' ? '🐍 ' : '🇪🇸 '}${v}</button>`).join('')}
+      </div>
+      ${quantum ? '<button class="qk-btn" id="btn-qiskit">📋 Script de Qiskit</button>' : ''}
+    </div>`;
+  $('btn-onb').onclick = () => intro(i);
+  $('instructions').querySelectorAll('[data-lang]').forEach(b => b.onclick = () => {
+    if (running) return;
+    setLang(b.dataset.lang); save.lang = b.dataset.lang; persist();
+    sfx.tap(); renderPanel();
+  });
+  $('btn-qiskit') && ($('btn-qiskit').onclick = showQiskit);
+  // chips de comandos
+  const chips = $('chips');
+  chips.innerHTML = '';
+  L.commands.forEach(name => {
+    const b = document.createElement('button');
+    b.className = 'chip' + (QUANTUM.has(name) ? ' q' : '') + (name === 'for' ? ' kw' : '');
+    b.textContent = cmd(name);
+    b.title = tr(COMMANDS[name].tip);
+    b.onclick = () => { sfx.tap(); editor.insert(name); };
+    chips.appendChild(b);
+  });
+  editor.setContext({ quantum, twin: !!L.twin });
+}
+
+// Script de Qiskit ejecutable con el circuito del niño
+function showQiskit() {
+  const L = level();
+  const code = qiskitScript(editor.compile(), { twin: !!L.twin, title: L.title });
+  const esc = t => t.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  modal(`
+    <div class="big">🐍</div>
+    <h1>Tu circuito en Qiskit</h1>
+    <p>Este es código de <b>Qiskit</b>, la herramienta de IBM que usan los científicos para programar computadoras cuánticas de verdad. Cópialo y córrelo en Python.</p>
+    <pre class="qk-code">${esc(code)}</pre>
+    <div class="btns"><button id="m-copy">📋 Copiar</button><button class="primary" id="m-ok">Listo</button></div>`);
+  $('m-ok').onclick = closeModal;
+  $('m-copy').onclick = async () => {
+    try { await navigator.clipboard.writeText(code); $('m-copy').textContent = '✅ ¡Copiado!'; }
+    catch { $('m-copy').textContent = 'Selecciona y copia el texto'; }
+  };
 }
 
 // Empezar un nivel desde la ruta: primero la introducción (la primera vez)
@@ -98,7 +139,7 @@ async function startLevel(i) {
 function intro(i) {
   const L = LEVELS[i];
   return showOnboarding({
-    level: L, index: i, data: ONBOARDING[L.id], unit: UNITS[L.chapter], rich,
+    level: L, index: i, data: ONBOARDING[L.id], unit: UNITS[L.chapter], rich, tr, lang: getLang(),
     onQuiz: ok => { const xp = progress.recordQuiz(i, ok); updateStats(); return xp; },
   }).then(r => { progress.markOnboarding(i); return r; });
 }
@@ -330,7 +371,7 @@ function checkGoal() {
 
 // ---------- mensajes ----------
 function showToast(html, canAsk) {
-  $('toast-msg').innerHTML = html;
+  $('toast-msg').innerHTML = tr(html);
   $('toast-ask').classList.toggle('hidden', !canAsk);
   $('toast').classList.remove('hidden');
 }
@@ -405,7 +446,8 @@ function welcome() {
 }
 
 // ---------- ruta de aprendizaje ----------
-const path = new PathScreen(progress, { onStart: startLevel });
+const path = new PathScreen(progress, { onStart: startLevel, onChallenges: () => challenges.show() });
+const challenges = new Challenges(progress, { onBack: () => path.show({ canClose: true, focus: idx }), onChange: updateStats });
 $('btn-levels').onclick = $('btn-chapter').onclick = () => { stop(); hideToast(); path.show({ focus: idx, canClose: true }); };
 
 // ---------- botones ----------
@@ -434,7 +476,7 @@ $('btn-more').onclick = () => {
 $('btn-hint').onclick = () => {
   const L = level();
   runStats.hint = true;
-  showToast(`💡 <b>Pista:</b> <code>${L.hint}</code>`, true);
+  showToast(`💡 <b>Pista:</b> <code>${tr(L.hint)}</code>`, true);
   $('toast-ask').textContent = '🦉 Explícamelo';
   $('toast-ask').onclick = () => { hideToast(); tutor.open('No entiendo la pista. ¿Me la explicas paso a paso?'); $('toast-ask').textContent = '🦉 Pregúntale al Profe'; $('toast-ask').onclick = () => { hideToast(); tutor.open('¿Por qué falló mi código? ¿Me das una pista?'); }; };
 };
@@ -465,12 +507,13 @@ function tutorContext() {
     levelTitle: L.title,
     objective: plain(L.objective),
     steps: L.steps.map(plain).join(' | '),
-    commands: L.commands.map(c => COMMANDS[c].code).join(', '),
+    language: getLang() === 'py' ? 'Python con Qiskit (qc es el circuito, gato es Schrödi)' : 'comandos en español',
+    commands: L.commands.map(c => cmd(c)).join(', '),
     code: editor.toText(),
     catState: `${qs.ket(!!L.twin)} — probabilidad 😴 ${Math.round((1 - pa) * 100)}%, 😺 ${Math.round(pa * 100)}%${qs.isEntangled() ? ', entrelazado con Qubita' : ''}`,
     fish: `${collected}/${world.L.fish.length}`,
     lastResult: plain(lastResult),
-    solution: L.hint,
+    solution: tr(L.hint),
   };
 }
 

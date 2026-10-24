@@ -8,11 +8,42 @@ Juego web 3D para niñas y niños (8–12 años) donde aprenden **computación c
 
 Juega en línea: **https://qiscat.isaihub.pro** (landing) · **https://qiscat.isaihub.pro/jugar/** (juego)
 
+## Código real de Python con Qiskit
+
+Como Swift Playgrounds enseña Swift de verdad, aquí el niño escribe **Python con Qiskit**, la herramienta de IBM para programar computadoras cuánticas. Un selector cambia entre **🐍 Python · Qiskit** y **🇪🇸 Español**.
+
+| | |
+|---|---|
+| ![Editor Qiskit](docs/screenshots/17-editor-qiskit.png) **El editor escribe `qc.h(0)`, `gato.avanzar()`, `for i in range(2):`** | ![Script](docs/screenshots/18-script-qiskit.png) **📋 Script de Qiskit listo para copiar y correr** |
+
+| Español | Python · Qiskit |
+|---|---|
+| `avanzar()` · `girarDerecha()` · `recogerPez()` | `gato.avanzar()` · `gato.girar_derecha()` · `gato.recoger_pez()` |
+| `for i in 1 ... 3 { }` | `for i in range(3):` |
+| `aplicarX()` · `aplicarH()` | `qc.x(0)` · `qc.h(0)` |
+| `medir()` · `entrelazar()` | `qc.measure_all()` · `qc.cx(0, 1)` |
+
+El juego no necesita instalar Qiskit: usa su propio simulador de 2 qubits en el navegador (`js/quantum.js`), que da los mismos resultados para estas compuertas. El botón **📋 Script de Qiskit** genera un script ejecutable (`pip install qiskit`) con el circuito del niño.
+
+## 🏅 35 desafíos extra
+
+| | |
+|---|---|
+| ![Desafíos](docs/screenshots/20-desafios.png) **Se desbloquean al avanzar en la ruta** | ![Python](docs/screenshots/21-desafio-python.png) **🐍 Python: llega al estado objetivo con Qiskit** |
+| ![Quiz](docs/screenshots/22-desafio-quiz.png) **❓ Quiz de física cuántica, Python y Qiskit** | ![Bloques](docs/screenshots/23-desafio-bloques.png) **🧩 Bloques tipo Scratch con mini mapa** |
+
+- **🐍 12 de Python con Qiskit**: con `qc.x`, `qc.h`, `qc.z` y `qc.cx` hay que igualar un estado (gemelos de Bell, “X sin X” con interferencia, Bell con signo…). Las barras muestran objetivo y resultado, con las amplitudes negativas en rojo. 3 ⭐ con el mínimo de líneas.
+- **❓ 12 quizzes**: bits y qubits, `range()`, Schrödinger, Einstein, `QuantumCircuit`, Qiskit.
+- **🧩 11 de bloques**: ordenar bloques (siempre sobran algunos) para guiar al gato por puertas ☀️🌙 y muros 🟣, o para preparar un estado cuántico.
+
+![Bloques superado](docs/screenshots/24-desafio-bloques-superado.png)
+
 ## Ruta de aprendizaje y gamificación
 
 | | |
 |---|---|
 | ![Ruta](docs/screenshots/13-ruta.png) **Ruta tipo Duolingo con niveles bloqueados** | ![Quiz](docs/screenshots/14-onboarding-quiz.png) **Introducción con mini quiz en cada nivel** |
+| ![Intro Qiskit](docs/screenshots/19-intro-qiskit.png) **El Profe Qubit presenta Qiskit** | |
 | ![Victoria](docs/screenshots/15-victoria-estrellas.png) **Estrellas, XP y racha** | ![Desbloqueo](docs/screenshots/16-nivel-desbloqueado.png) **El siguiente nivel se desbloquea al ganar** |
 
 - **Ruta**: 3 unidades con los niveles en zigzag; cada nivel se desbloquea al terminar el anterior. Al final, el trofeo 🏆 *Ingeniero cuántico*.
@@ -85,6 +116,9 @@ js/progress.js            XP, estrellas, racha y desbloqueo de niveles
 js/path.js                Ruta de aprendizaje (pantalla de inicio)
 js/onboarding.js          Introducción de cada nivel con mini quiz
 js/onboarding-data.js     Textos, unidades y preguntas de cada nivel
+js/lang.js                Python · Qiskit / Español: traducción y script de Qiskit
+js/challenges.js          Desafíos: lista, Python, quiz, bloques y simulador
+js/challenges-data.js     Los 35 desafíos
 landing/                  Landing page (usa el motor 3D del juego)
 ```
 

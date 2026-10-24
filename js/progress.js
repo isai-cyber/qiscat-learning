@@ -14,6 +14,7 @@ export class Progress {
     save.stars ||= {};
     save.quiz ||= {};
     save.onb ||= {};
+    save.chal ||= {};
     save.xp ||= 0;
     save.streak ||= { count: 0, last: null };
     // progreso de versiones anteriores: los niveles ya terminados valen 1 estrella
@@ -57,14 +58,35 @@ export class Progress {
     this.s.stars[id] = Math.max(prev, stars);
     this.s.xp += xp;
 
+    const { count: streak, up: streakUp } = this.touchStreak();
+    this.persist();
+    return { stars, best: this.s.stars[id], xp, first, streak, streakUp, unlockedNext: first && i + 1 < LEVELS.length };
+  }
+
+  // Jugar hoy suma a la racha (una vez por día)
+  touchStreak() {
     const st = this.s.streak, today = dayKey();
-    const streakUp = st.last !== today;
+    const up = st.last !== today;
     if (st.last === yesterdayKey()) st.count += 1;
     else if (st.last !== today) st.count = 1;
     st.last = today;
+    return { count: st.count, up };
+  }
 
+  // ---------- desafíos ----------
+  chal(id) { return this.s.chal[id]; }
+  // stars: en Python según las líneas usadas; en quiz 3 = a la primera, 1 = después de fallar
+  recordChallenge(c, stars) {
+    const prev = this.s.chal[c.id];
+    const base = { python: 10, quiz: 5, blocks: 10 }[c.type];
+    let xp;
+    if (!prev) xp = c.type === 'quiz' ? (stars === 3 ? 5 : 2) : base + (stars === 3 ? 5 : 0);
+    else xp = stars > prev.stars ? 5 : 0;
+    this.s.chal[c.id] = { stars: Math.max(prev?.stars || 0, stars) };
+    this.s.xp += xp;
+    this.touchStreak();
     this.persist();
-    return { stars, best: this.s.stars[id], xp, first, streak: st.count, streakUp, unlockedNext: first && i + 1 < LEVELS.length };
+    return { xp, first: !prev };
   }
 
   recordQuiz(i, correct) {

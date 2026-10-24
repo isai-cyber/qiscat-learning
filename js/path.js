@@ -9,10 +9,11 @@ const DECOR = { 1: '<img src="assets/logo.webp" alt="">', 2: '<span>📦</span>'
 
 export class PathScreen {
   // onStart(i) se llama al tocar EMPEZAR / REPASAR en un nivel desbloqueado
-  constructor(progress, { onStart, onClose }) {
+  constructor(progress, { onStart, onClose, onChallenges }) {
     this.p = progress;
     this.onStart = onStart;
     this.onClose = onClose;
+    this.onChallenges = onChallenges;
     this.root = $('path');
     this.root.addEventListener('click', e => this.onClick(e));
   }
@@ -39,7 +40,10 @@ export class PathScreen {
           <span class="st xp" title="Puntos de experiencia">⚡ ${p.xp} XP</span>
           <span class="st star" title="Estrellas">⭐ ${p.totalStars()}/${LEVELS.length * 3}</span>
         </div>
-        ${canClose ? '<button class="path-close" data-act="close" title="Volver al nivel">✕</button>' : '<span></span>'}
+        <div class="path-actions">
+          <button class="chal-open" data-act="chal">🏅 <span>Desafíos</span></button>
+          ${canClose ? '<button class="path-close" data-act="close" title="Volver al nivel">✕</button>' : ''}
+        </div>
       </header>
       <div class="path-scroll"><div class="path-col">`;
 
@@ -72,6 +76,11 @@ export class PathScreen {
 
     const all = p.allDone();
     html += `
+      <button class="chal-promo" data-act="chal">
+        <span class="cp-icons">🐍❓🧩</span>
+        <b>35 desafíos extra</b>
+        <span>Python con Qiskit, quizzes y bloques. Se desbloquean al avanzar.</span>
+      </button>
       <div class="trophy ${all ? 'won' : ''}">
         <div class="trophy-icon">${all ? '🏆' : '🔒'}</div>
         <b>Ingeniero cuántico</b>
@@ -83,6 +92,7 @@ export class PathScreen {
 
   onClick(e) {
     if (e.target.closest('[data-act="close"]')) { this.hide(); this.onClose?.(); return; }
+    if (e.target.closest('[data-act="chal"]')) { sfx.tap(); this.hide(); this.onChallenges?.(); return; }
     const start = e.target.closest('[data-start]');
     if (start) { sfx.tap(); this.hide(); this.onStart(+start.dataset.start); return; }
     const node = e.target.closest('[data-node]');

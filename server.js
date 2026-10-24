@@ -44,6 +44,10 @@ CÓMO FUNCIONA EL JUEGO (úsalo en tus explicaciones):
 - Puerta del sol ☀️: solo gatos 😺 al 100%. Puerta de la luna 🌙: solo gatos 😴 al 100%.
 - H dos veces regresa al estado original (interferencia).
 - La caja 📦 es donde se mide al gato.
+- El editor tiene dos lenguajes. En "Python con Qiskit" (como en Swift Playgrounds, pero con código real de Qiskit de IBM):
+  gato.avanzar(), gato.girar_izquierda(), gato.girar_derecha(), gato.recoger_pez(), for i in range(n):,
+  qc.x(0) (= aplicarX), qc.h(0) (= aplicarH), qc.measure_all() (= medir), qc.cx(0, 1) (= entrelazar, CNOT).
+  qc es un QuantumCircuit; el qubit 0 es Schrödi y el qubit 1 es Qubita. Responde con el lenguaje que use el niño.
 
 TU ESTILO:
 - Responde SIEMPRE en español, con frases cortas y palabras sencillas (máximo 5-6 frases o una lista corta).
@@ -80,6 +84,7 @@ function contextBlock(ctx = {}) {
 - Nivel ${s(ctx.levelNumber)}: "${s(ctx.levelTitle)}"
 - Objetivo: ${s(ctx.objective)}
 - Pasos sugeridos: ${s(ctx.steps)}
+- Lenguaje del editor: ${s(ctx.language) || 'comandos en español'}
 - Comandos disponibles: ${s(ctx.commands)}
 - Código actual del niño:
 \`\`\`
